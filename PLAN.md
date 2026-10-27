@@ -685,3 +685,5 @@ WA_STORAGE_PATH=/path/ke/go-whatsapp-web-multidevice/src
    - `cookie_path` diset universal (`/`) dan `secure` mengikuti setting `COOKIE_SECURE` (True untuk HTTPS).
 5. **Backend Redirects**:
    - Seluruh `RedirectResponse` (login, logout, auth Google, dokumen, agenda, user) menggunakan `settings.url_path(...)` agar browser diarahkan ke URL reverse proxy yang tepat.
+
+

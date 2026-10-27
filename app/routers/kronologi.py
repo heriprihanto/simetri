@@ -59,7 +59,7 @@ async def timeline(
     """Halaman timeline kronologi kejadian."""
     user = get_current_user(request)
     if not user:
-        return RedirectResponse(url=settings.url_path("/login"), status_code=302)
+        return RedirectResponse(url=settings.url_path("/login", request), status_code=302)
 
     per_page = 20
     dokumen_list = _filter_dokumen_for_user(session, user)

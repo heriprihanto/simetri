@@ -33,7 +33,7 @@ async def daftar_surat(
     """Halaman daftar arsip surat."""
     user = get_current_user(request)
     if not user:
-        return RedirectResponse(url=settings.url_path("/login"), status_code=302)
+        return RedirectResponse(url=settings.url_path("/login", request), status_code=302)
 
     per_page = 20
 

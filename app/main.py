@@ -64,6 +64,23 @@ try:
 except ImportError:
     pass
 
+
+@app.middleware("http")
+async def prefix_middleware(request: Request, call_next):
+    """Auto-detect reverse proxy prefix (X-Forwarded-Prefix) dan inject ke request.scope['root_path']."""
+    fwd_prefix = request.headers.get("x-forwarded-prefix", "").strip().rstrip("/")
+    if fwd_prefix:
+        request.scope["root_path"] = fwd_prefix
+    elif settings.ROOT_PATH:
+        request.scope["root_path"] = settings.ROOT_PATH.rstrip("/")
+
+    # Fallback: Jika URL path diawali /simetri tapi root_path belum terisi
+    if not request.scope.get("root_path") and request.url.path.startswith("/simetri"):
+        request.scope["root_path"] = "/simetri"
+
+    return await call_next(request)
+
+
 # Static files
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
@@ -83,15 +100,18 @@ app.include_router(whatsapp.router)
 
 
 @app.get("/")
-async def root():
+@app.get("/simetri")
+@app.get("/simetri/")
+async def root(request: Request):
     """Redirect ke halaman utama (kronologi)."""
-    return RedirectResponse(url=settings.url_path("/kronologi"))
+    target = settings.url_path("/kronologi", request)
+    return RedirectResponse(url=target)
 
 
 @app.exception_handler(401)
 async def unauthorized_handler(request: Request, exc):
     """Redirect ke login jika tidak terotentikasi."""
-    login_url = settings.url_path("/login")
+    login_url = settings.url_path("/login", request)
     if request.headers.get("HX-Request"):
         return HTMLResponse(
             content=f'<script>window.location.href="{login_url}";</script>',

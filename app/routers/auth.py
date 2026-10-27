@@ -35,7 +35,7 @@ async def login_page(request: Request):
     """Halaman login."""
     user = get_current_user(request)
     if user:
-        return RedirectResponse(url=settings.url_path("/kronologi"), status_code=302)
+        return RedirectResponse(url=settings.url_path("/kronologi", request), status_code=302)
 
     return templates.TemplateResponse(
         request=request,
@@ -50,7 +50,7 @@ async def dev_login(request: Request, session: Session = Depends(get_session)):
     user = session.exec(select(User).where(User.role == "admin")).first()
     if not user:
         user = session.exec(select(User)).first()
-    response = RedirectResponse(url=settings.url_path("/kronologi"), status_code=302)
+    response = RedirectResponse(url=settings.url_path("/kronologi", request), status_code=302)
     set_session_cookie(response, user)
     return response
 
@@ -77,7 +77,7 @@ async def _handle_oauth_code(request: Request, code: str, session: Session) -> R
             if "error" in token_data:
                 logger.error("Google OAuth token error: %s", token_data)
                 return RedirectResponse(
-                    url=settings.url_path("/login?error=token_error"), status_code=302
+                    url=settings.url_path("/login?error=token_error", request), status_code=302
                 )
 
             # Ambil profil user dari Google
@@ -89,11 +89,11 @@ async def _handle_oauth_code(request: Request, code: str, session: Session) -> R
             userinfo = userinfo_resp.json()
     except Exception as e:
         logger.error("OAuth exchange exception: %s", e)
-        return RedirectResponse(url=settings.url_path("/login?error=oauth_error"), status_code=302)
+        return RedirectResponse(url=settings.url_path("/login?error=oauth_error", request), status_code=302)
 
     email = userinfo.get("email", "").lower().strip()
     if not email:
-        return RedirectResponse(url=settings.url_path("/login?error=no_email"), status_code=302)
+        return RedirectResponse(url=settings.url_path("/login?error=no_email", request), status_code=302)
 
     # Cek apakah email terdaftar di whitelist
     stmt = select(User).where(User.email == email)
@@ -102,13 +102,13 @@ async def _handle_oauth_code(request: Request, code: str, session: Session) -> R
     if not user:
         logger.warning("Login ditolak: %s tidak terdaftar di whitelist", email)
         return RedirectResponse(
-            url=settings.url_path("/login?error=not_registered"), status_code=302
+            url=settings.url_path("/login?error=not_registered", request), status_code=302
         )
 
     if not user.is_active:
         logger.warning("Login ditolak: %s akun dinonaktifkan", email)
         return RedirectResponse(
-            url=settings.url_path("/login?error=inactive"), status_code=302
+            url=settings.url_path("/login?error=inactive", request), status_code=302
         )
 
     # Update nama & foto avatar dari Google jika ada
@@ -132,7 +132,7 @@ async def _handle_oauth_code(request: Request, code: str, session: Session) -> R
     )
 
     # Redirect ke halaman utama dengan cookie session
-    response = RedirectResponse(url=settings.url_path("/kronologi"), status_code=302)
+    response = RedirectResponse(url=settings.url_path("/kronologi", request), status_code=302)
     set_session_cookie(response, user)
 
     logger.info("Login berhasil: %s (%s)", user.name, user.email)
@@ -173,13 +173,13 @@ async def google_callback(
 ):
     """Fallback callback jika Google redirect ke /oauthcallback."""
     if not code:
-        return RedirectResponse(url=settings.url_path("/login?error=no_code"), status_code=302)
+        return RedirectResponse(url=settings.url_path("/login?error=no_code", request), status_code=302)
     return await _handle_oauth_code(request, code, session)
 
 
 @router.get("/logout")
 async def logout(request: Request):
     """Logout dan hapus session cookie."""
-    response = RedirectResponse(url=settings.url_path("/login"), status_code=302)
+    response = RedirectResponse(url=settings.url_path("/login", request), status_code=302)
     clear_session_cookie(response)
     return response

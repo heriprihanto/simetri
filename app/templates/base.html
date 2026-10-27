@@ -1,5 +1,6 @@
 {% set page_title = page_title|default(title|default("SIMETRI - Bappeda Kota Tegal", true), true) %}
-{% set root_path = root_path|default(request.scope.get('root_path', '')) %}
+{% set root_path = request.scope.get('root_path') or (request.headers.get('x-forwarded-prefix', '') if request.headers is defined else '') or root_path|default('') %}
+{% if not root_path and request.url is defined and request.url.path.startswith('/simetri') %}{% set root_path = '/simetri' %}{% endif %}
 <!DOCTYPE html>
 <html lang="id" class="h-full">
 <head>

@@ -16,9 +16,26 @@ class Settings(BaseSettings):
     COOKIE_SECURE: bool = False  # Di server: True (HTTPS)
     SECRET_KEY: str = "simetri_bappeda_kota_tegal_super_secret_key_2026"
 
-    def url_path(self, path: str) -> str:
-        """Helper untuk menghasilkan URL dengan prefix ROOT_PATH jika diset."""
-        root = self.ROOT_PATH.rstrip("/")
+    def url_path(self, path: str, request: Any = None) -> str:
+        """Helper untuk menghasilkan URL dengan prefix ROOT_PATH jika diset,
+        atau auto-detect dari request scope/headers/path."""
+        root = ""
+        if request is not None:
+            scope_root = getattr(request, "scope", {}).get("root_path", "")
+            if isinstance(scope_root, str) and scope_root.strip():
+                root = scope_root.rstrip("/")
+            elif hasattr(request, "headers"):
+                fwd_prefix = request.headers.get("x-forwarded-prefix", "").strip().rstrip("/")
+                if fwd_prefix:
+                    root = fwd_prefix
+            if not root and hasattr(request, "url"):
+                req_path = str(getattr(request.url, "path", ""))
+                if req_path.startswith("/simetri"):
+                    root = "/simetri"
+
+        if not root:
+            root = self.ROOT_PATH.rstrip("/")
+
         if not path.startswith("/"):
             path = "/" + path
         return f"{root}{path}" if root else path

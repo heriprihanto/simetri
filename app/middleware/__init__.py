@@ -89,7 +89,7 @@ def require_login(request: Request) -> User:
     """Dependency: pastikan user sudah login, redirect ke /login jika belum."""
     user = get_current_user(request)
     if not user:
-        login_url = settings.url_path("/login")
+        login_url = settings.url_path("/login", request)
         raise HTTPException(status_code=302, headers={"Location": login_url})
     return user
 
