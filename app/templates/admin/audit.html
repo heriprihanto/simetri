@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Header -->
+  <div class="page-heading flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
+    <div>
+      <div class="flex items-center gap-2 mb-1">
+        <h1 class="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+          Audit Trail
+        </h1>
+        <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+          {{ total_logs }} Aktivitas Tercatat
+        </span>
+      </div>
+      <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+        Rekam jejak seluruh aktivitas pengguna (Login, Tambah, Edit, Hapus, dan Upload file) untuk akuntabilitas sistem.
+      </p>
+    </div>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="glass-card rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800/80">
+    <form method="get" action="/admin/audit" class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
+      <div>
+        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Filter Aksi</label>
+        <select name="action" onchange="this.form.submit()" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs outline-none">
+          <option value="">Semua Aksi</option>
+          <option value="LOGIN" {% if current_action == 'LOGIN' %}selected{% endif %}>LOGIN</option>
+          <option value="CREATE" {% if current_action == 'CREATE' %}selected{% endif %}>CREATE</option>
+          <option value="UPDATE" {% if current_action == 'UPDATE' %}selected{% endif %}>UPDATE</option>
+          <option value="DELETE" {% if current_action == 'DELETE' %}selected{% endif %}>DELETE</option>
+          <option value="UPLOAD" {% if current_action == 'UPLOAD' %}selected{% endif %}>UPLOAD</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Filter Entitas</label>
+        <select name="entity" onchange="this.form.submit()" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs outline-none">
+          <option value="">Semua Entitas</option>
+          <option value="kejadian" {% if current_entity == 'kejadian' %}selected{% endif %}>Kejadian (Kronologi)</option>
+          <option value="dokumen" {% if current_entity == 'dokumen' %}selected{% endif %}>Dokumen Perencanaan</option>
+          <option value="surat" {% if current_entity == 'surat' %}selected{% endif %}>Arsip Surat</option>
+          <option value="agenda" {% if current_entity == 'agenda' %}selected{% endif %}>Agenda Kegiatan</option>
+          <option value="lampiran" {% if current_entity == 'lampiran' %}selected{% endif %}>Lampiran Google Drive</option>
+          <option value="user" {% if current_entity == 'user' %}selected{% endif %}>Pengguna (User)</option>
+        </select>
+      </div>
+
+      <div class="sm:pt-5">
+        <a href="/admin/audit" class="inline-block px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300">
+          Reset Filter
+        </a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Audit Logs Table -->
+  <div class="glass-card rounded-2xl border border-slate-200/80 dark:border-slate-800/80 overflow-hidden shadow-sm">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs text-slate-700 dark:text-slate-300">
+        <thead class="bg-slate-50 dark:bg-slate-800/80 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
+          <tr>
+            <th scope="col" class="px-4 py-3.5">Waktu</th>
+            <th scope="col" class="px-4 py-3.5">Pengguna</th>
+            <th scope="col" class="px-4 py-3.5">Aksi</th>
+            <th scope="col" class="px-4 py-3.5">Entitas</th>
+            <th scope="col" class="px-4 py-3.5">Keterangan Aktivitas</th>
+            <th scope="col" class="px-4 py-3.5">IP Address</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+          {% for log in logs %}
+          <tr class="hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors">
+            <!-- Waktu -->
+            <td class="px-4 py-3.5 whitespace-nowrap text-slate-500 dark:text-slate-400">
+              <div>{{ log.created_at.strftime('%d/%m/%Y') }}</div>
+              <div class="text-[10px]">{{ log.created_at.strftime('%H:%M:%S') }} WIB</div>
+            </td>
+
+            <!-- Pengguna -->
+            <td class="px-4 py-3.5">
+              <div class="font-bold text-slate-900 dark:text-white">{{ log.user_name or log.user_email }}</div>
+              <div class="text-[10px] text-slate-400">{{ log.user_email }}</div>
+            </td>
+
+            <!-- Aksi Badge -->
+            <td class="px-4 py-3.5 whitespace-nowrap">
+              <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold 
+                {% if log.action == 'CREATE' %}bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300
+                {% elif log.action == 'UPDATE' %}bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300
+                {% elif log.action == 'DELETE' %}bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300
+                {% elif log.action == 'UPLOAD' %}bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300
+                {% else %}bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300{% endif %}">
+                {{ log.action }}
+              </span>
+            </td>
+
+            <!-- Entitas -->
+            <td class="px-4 py-3.5 whitespace-nowrap font-semibold text-slate-800 dark:text-slate-200">
+              {{ log.entity }}
+            </td>
+
+            <!-- Deskripsi -->
+            <td class="px-4 py-3.5 max-w-sm">
+              <div class="text-slate-800 dark:text-slate-200 leading-snug">{{ log.description }}</div>
+            </td>
+
+            <!-- IP -->
+            <td class="px-4 py-3.5 whitespace-nowrap text-slate-400 text-[11px]">
+              {{ log.ip_address or '-' }}
+            </td>
+
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="6" class="px-6 py-12 text-center text-slate-400 italic">
+              Belum ada riwayat audit log.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  {% if total_pages > 1 %}
+  <div class="flex items-center justify-between pt-2">
+    <div class="text-xs text-slate-500">
+      Halaman {{ page }} dari {{ total_pages }}
+    </div>
+    <div class="flex items-center gap-1.5">
+      {% if page > 1 %}
+      <a href="/admin/audit?page={{ page - 1 }}&action={{ current_action }}&entity={{ current_entity }}" class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800">Sebelumnya</a>
+      {% endif %}
+      {% if page < total_pages %}
+      <a href="/admin/audit?page={{ page + 1 }}&action={{ current_action }}&entity={{ current_entity }}" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold">Berikutnya</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+  if (window.lucide) lucide.createIcons();
+</script>
+{% endblock %}

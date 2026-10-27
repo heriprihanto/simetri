@@ -1,0 +1,192 @@
+{% if kejadian_list %}
+<div class="relative pl-6 sm:pl-8 space-y-6">
+  <!-- Vertical Timeline Stem Line -->
+  <div class="timeline-stem"></div>
+
+  {% for k in kejadian_list %}
+  <div class="relative group">
+    <!-- Timeline Dot / Node -->
+    <div
+      class="absolute -left-[1.85rem] sm:-left-[2.35rem] top-1.5 w-6 h-6 rounded-full bg-white dark:bg-slate-900 border-2 border-indigo-500 flex items-center justify-center shadow-md group-hover:scale-125 group-hover:border-purple-500 transition-all z-10">
+      <div class="w-2 h-2 rounded-full bg-indigo-600 dark:bg-indigo-400"></div>
+    </div>
+
+    <!-- Timeline Card -->
+    <div
+      class="glass-card rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-700/60 transition-all">
+
+      <!-- Card Header: Date, Doc badge, and Event type -->
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div class="flex flex-wrap items-center gap-2">
+          <!-- Tanggal & Jam -->
+          <div class="flex items-center gap-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400">
+            <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
+            <span>{{ k.tanggal_format }}</span>
+            {% if k.waktu_mulai %}
+            <span class="text-slate-400 font-normal">({{ k.rentang_waktu }})</span>
+            {% endif %}
+          </div>
+
+          <!-- Badge Jenis Kejadian -->
+          <span
+            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-700 dark:bg-purple-950/80 dark:text-purple-300">
+            {{ k.jenis_kejadian }}
+          </span>
+
+          <!-- Dokumen Terkait -->
+          {% if dokumen_map.get(k.dokumen_id) %}
+          <span
+            class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+            <i data-lucide="file-text" class="w-3 h-3 text-slate-400"></i>
+            {{ dokumen_map[k.dokumen_id].nama }}
+          </span>
+          {% endif %}
+        </div>
+
+        <!-- Bidang PJ Badge -->
+        {% if k.bidang_pj %}
+        <span
+          class="text-[11px] font-medium text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/60 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700">
+          {{ k.bidang_pj }}
+        </span>
+        {% endif %}
+      </div>
+
+      <!-- Judul Kejadian -->
+      <h3
+        class="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-snug mb-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+        {{ k.judul_kejadian }}
+      </h3>
+
+      <!-- Lokasi jika ada -->
+      {% if k.lokasi %}
+      <div class="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mb-2.5">
+        <i data-lucide="map-pin" class="w-3.5 h-3.5 text-rose-500 shrink-0"></i>
+        <span>{{ k.lokasi }}</span>
+      </div>
+      {% endif %}
+
+      <!-- Uraian Ringkas Kronologi -->
+      {% if k.uraian_kronologi %}
+      <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-4 line-clamp-3">
+        {{ k.uraian_kronologi | striptags }}
+      </p>
+      {% endif %}
+
+      <!-- Context Changes (Pagu / Target) Highlight if any -->
+      {% if k.perubahan_pagu or k.perubahan_indikator_target %}
+      <div
+        class="mb-4 p-3 rounded-xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/50 text-xs text-amber-900 dark:text-amber-200 flex flex-wrap gap-4">
+        {% if k.perubahan_pagu %}
+        <div>
+          <span class="font-bold text-amber-800 dark:text-amber-300">Perubahan Pagu:</span> {{ k.perubahan_pagu }}
+        </div>
+        {% endif %}
+        {% if k.perubahan_indikator_target %}
+        <div>
+          <span class="font-bold text-amber-800 dark:text-amber-300">Indikator/Target:</span> {{
+          k.perubahan_indikator_target }}
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <!-- Lampiran Pills -->
+      {% if k.lampiran %}
+      <div class="flex flex-wrap items-center gap-2 mb-4 pt-2 border-t border-slate-100 dark:border-slate-800/60">
+        <span class="text-xs font-semibold text-slate-400 dark:text-slate-500">Lampiran:</span>
+        {% for l in k.lampiran %}
+        <a href="{{ l.display_url }}" target="_blank" rel="noopener noreferrer"
+          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/80 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/40 transition-colors"
+          title="{{ l.judul or l.file_name }}">
+          <i data-lucide="{% if l.is_link %}link{% else %}paperclip{% endif %}" class="w-3 h-3 text-indigo-500"></i>
+          <span class="truncate max-w-[180px]">{{ l.judul or l.file_name or "Lihat File" }}</span>
+          {% if l.is_link %}
+          <span
+            class="text-[9px] px-1 py-0.2 rounded font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">link</span>
+          {% endif %}
+        </a>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- Actions -->
+      <div class="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800 text-xs">
+        <button hx-get="/kronologi/detail/{{ k.id }}" hx-target="#modal-container" hx-swap="innerHTML"
+          class="font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center gap-1 transition-colors">
+          <span>Lihat Selengkapnya</span>
+          <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+        </button>
+
+        <div class="flex items-center gap-1.5">
+          <!-- Edit Button -->
+          <button hx-get="/kronologi/form/{{ k.id }}" hx-target="#modal-container" hx-swap="innerHTML"
+            class="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+            title="Edit Kejadian">
+            <i data-lucide="edit-3" class="w-4 h-4"></i>
+          </button>
+
+          <!-- Delete Button -->
+          <button hx-delete="/kronologi/delete/{{ k.id }}"
+            hx-confirm="Apakah Anda yakin ingin menghapus kejadian ini beserta seluruh lampirannya?"
+            hx-target="closest .relative.group" hx-swap="outerHTML swap:0.3s"
+            class="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors"
+            title="Hapus Kejadian">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Pagination Controls -->
+{% if total_pages > 1 %}
+<div class="mt-8 flex items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-800">
+  <div class="text-xs text-slate-500 dark:text-slate-400">
+    Halaman <span class="font-bold text-slate-700 dark:text-slate-200">{{ page }}</span> dari <span
+      class="font-bold text-slate-700 dark:text-slate-200">{{ total_pages }}</span> (Total {{ total }} kejadian)
+  </div>
+  <div class="flex items-center gap-1.5">
+    {% if page > 1 %}
+    <button hx-get="/kronologi?page={{ page - 1 }}" hx-include="[name='dokumen_id'], [name='jenis'], [name='q']"
+      hx-target="#timeline-container"
+      class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+      Sebelumnya
+    </button>
+    {% endif %}
+
+    {% if page < total_pages %} <button hx-get="/kronologi?page={{ page + 1 }}"
+      hx-include="[name='dokumen_id'], [name='jenis'], [name='q']" hx-target="#timeline-container"
+      class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-sm transition-colors">
+      Berikutnya
+      </button>
+      {% endif %}
+  </div>
+</div>
+{% endif %}
+
+{% else %}
+<!-- Empty State -->
+<div class="text-center py-16 px-4 glass-card rounded-3xl border border-dashed border-slate-300 dark:border-slate-800">
+  <div
+    class="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-500 mx-auto flex items-center justify-center mb-4">
+    <i data-lucide="git-commit" class="w-8 h-8"></i>
+  </div>
+  <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-1">Belum Ada Kejadian Tercatat</h3>
+  <p class="text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto mb-6">
+    Tidak ditemukan data kronologi perencanaan yang sesuai dengan filter atau pencarian Anda.
+  </p>
+  <button hx-get="/kronologi/form" hx-target="#modal-container" hx-swap="innerHTML"
+    class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-500/20 transition-all">
+    <i data-lucide="plus" class="w-4 h-4"></i>
+    <span>Catat Kejadian Baru</span>
+  </button>
+</div>
+{% endif %}
+
+<script>
+  if (window.lucide) lucide.createIcons();
+</script>

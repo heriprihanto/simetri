@@ -1,0 +1,222 @@
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm modal-backdrop">
+  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden modal-content">
+    
+    <!-- Modal Header -->
+    <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+          <i data-lucide="calendar" class="w-4 h-4"></i>
+        </div>
+        <div>
+          <h2 class="text-base font-bold text-slate-900 dark:text-white">
+            {% if agenda %}Edit Agenda Kegiatan{% else %}Catat Agenda Kegiatan Baru{% endif %}
+          </h2>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400">
+            Jadwal rapat atau kegiatan kedinasan Bapperida Kota Tegal
+          </p>
+        </div>
+      </div>
+      <button onclick="closeModal()" type="button" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <!-- Modal Form Body -->
+    <form 
+      id="form-agenda"
+      hx-post="/agenda/save"
+      hx-swap="none"
+      class="p-6 overflow-y-auto space-y-4 flex-1">
+      
+      {% if agenda %}
+      <input type="hidden" name="id" value="{{ agenda.id }}">
+      {% endif %}
+
+      <div>
+        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Judul Kegiatan / Nama Acara <span class="text-rose-500">*</span></label>
+        <input 
+          type="text" 
+          name="judul" 
+          required 
+          value="{{ agenda.judul if agenda else '' }}"
+          placeholder="Contoh: Rapat Koordinasi Evaluasi RKPD Triwulan II"
+          class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
+      </div>
+
+      <!-- Kategori & Bidang -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Kategori Agenda <span class="text-rose-500">*</span></label>
+          <select name="kategori" required class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
+            {% for k in kategori_list %}
+            <option value="{{ k }}" {% if agenda and agenda.kategori == k %}selected{% endif %}>{{ k }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Bidang Penyelenggara</label>
+          <select name="bidang" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
+            <option value="">-- Pilih Bidang --</option>
+            {% for b in bidang_list %}
+            <option value="{{ b.nama }}" {% if agenda and (agenda.bidang == b.nama or agenda.bidang == b.kode) %}selected{% elif not agenda and user and (user.bidang == b.kode or user.bidang == b.nama) %}selected{% endif %}>
+              {{ b.nama }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <!-- Tanggal & Jam -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Tanggal Pelaksanaan <span class="text-rose-500">*</span></label>
+          <input 
+            type="date" 
+            name="tanggal" 
+            required 
+            value="{{ agenda.tanggal.isoformat() if agenda else '' }}"
+            class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Jam Mulai</label>
+          <input 
+            type="text" 
+            name="jam_mulai" 
+            value="{{ agenda.jam_mulai if agenda else '09:00' }}"
+            placeholder="09:00"
+            class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Jam Selesai</label>
+          <input 
+            type="text" 
+            name="jam_selesai" 
+            value="{{ agenda.jam_selesai if agenda else '12:00' }}"
+            placeholder="12:00"
+            class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
+        </div>
+      </div>
+
+      <!-- Tempat / Ruangan with Dropdown & Custom Typing -->
+      <div>
+        <div class="flex items-center justify-between mb-1">
+          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">Tempat / Ruangan / Link Daring</label>
+          <span class="text-[10px] text-slate-400">Pilih opsi dropdown atau ketik manual</span>
+        </div>
+        <div class="relative">
+          <input 
+            type="text" 
+            name="tempat" 
+            id="agenda-input-tempat"
+            list="tempat-ruangan-options"
+            autocomplete="off"
+            value="{{ agenda.tempat if agenda else '' }}"
+            placeholder="Pilih ruangan dari dropdown atau ketik tempat kegiatan..."
+            class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
+          <datalist id="tempat-ruangan-options">
+            <option value="R. Rapat Lt. 1 Bapperida"></option>
+            <option value="R. Rapat Lt. 2 Bapperida"></option>
+            <option value="R. Rapat Kecil Lt. 2 Bapperida"></option>
+          </datalist>
+        </div>
+        
+        <!-- Pilihan Cepat / Preset Pills -->
+        <div class="flex items-center gap-1.5 mt-2 flex-wrap">
+          <span class="text-[10px] text-slate-400 font-medium">Pilihan cepat:</span>
+          <button 
+            type="button" 
+            onclick="document.getElementById('agenda-input-tempat').value = 'R. Rapat Lt. 1 Bapperida'" 
+            class="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-indigo-950/50 dark:hover:text-indigo-300 border border-slate-200/60 dark:border-slate-700/60 transition-all inline-flex items-center gap-1 cursor-pointer">
+            <i data-lucide="map-pin" class="w-3 h-3 text-indigo-500"></i>
+            <span>R. Rapat Lt. 1 Bapperida</span>
+          </button>
+          <button 
+            type="button" 
+            onclick="document.getElementById('agenda-input-tempat').value = 'R. Rapat Lt. 2 Bapperida'" 
+            class="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-indigo-950/50 dark:hover:text-indigo-300 border border-slate-200/60 dark:border-slate-700/60 transition-all inline-flex items-center gap-1 cursor-pointer">
+            <i data-lucide="map-pin" class="w-3 h-3 text-indigo-500"></i>
+            <span>R. Rapat Lt. 2 Bapperida</span>
+          </button>
+          <button 
+            type="button" 
+            onclick="document.getElementById('agenda-input-tempat').value = 'R. Rapat Kecil Lt. 2 Bapperida'" 
+            class="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-indigo-950/50 dark:hover:text-indigo-300 border border-slate-200/60 dark:border-slate-700/60 transition-all inline-flex items-center gap-1 cursor-pointer">
+            <i data-lucide="map-pin" class="w-3 h-3 text-indigo-500"></i>
+            <span>R. Rapat Kecil Lt. 2 Bapperida</span>
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Tautan Surat / Undangan (Opsional)</label>
+        <select name="surat_id" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
+          <option value="">-- Pilih Tautan Arsip Surat Jika Ada --</option>
+          {% for s in surat_list %}
+          <option value="{{ s.id }}" {% if agenda and agenda.surat_id == s.id %}selected{% endif %}>
+            {{ s.nomor_surat }} — {{ s.perihal[:50] }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Keterangan / Catatan Tambahan</label>
+        <textarea 
+          name="keterangan" 
+          rows="2" 
+          placeholder="Catatan pimpinan, disposisi, atau susunan acara..."
+          class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none resize-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">{{ agenda.keterangan if agenda else '' }}</textarea>
+      </div>
+
+      <div class="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2">
+        <button onclick="closeModal()" type="button" class="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+          Batal
+        </button>
+        <button 
+          type="submit" 
+          id="btn-submit-agenda"
+          class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-500/20 flex items-center gap-1.5 transition-all">
+          <i data-lucide="check" class="w-4 h-4"></i>
+          <span id="btn-submit-agenda-text">Simpan Agenda</span>
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<script>
+  (function() {
+    if (window.lucide) lucide.createIcons();
+
+    const form = document.getElementById('form-agenda');
+    if (form) {
+      form.addEventListener('htmx:configRequest', function() {
+        const btn = document.getElementById('btn-submit-agenda');
+        const text = document.getElementById('btn-submit-agenda-text');
+        if (btn && text) {
+          btn.disabled = true;
+          btn.classList.add('opacity-75', 'cursor-not-allowed');
+          text.innerText = 'Menyimpan Agenda...';
+        }
+      });
+
+      form.addEventListener('htmx:afterRequest', function(evt) {
+        if (evt.detail.successful) {
+          closeModal();
+        } else {
+          const btn = document.getElementById('btn-submit-agenda');
+          const text = document.getElementById('btn-submit-agenda-text');
+          if (btn && text) {
+            btn.disabled = false;
+            btn.classList.remove('opacity-75', 'cursor-not-allowed');
+            text.innerText = 'Simpan Agenda';
+          }
+        }
+      });
+    }
+  })();
+</script>

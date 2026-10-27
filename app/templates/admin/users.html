@@ -1,0 +1,375 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Header -->
+  <div class="page-heading flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
+    <div>
+      <div class="flex items-center gap-2 mb-1">
+        <h1 class="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+          Manajemen Pengguna
+        </h1>
+        <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+          Whitelist Google OAuth
+        </span>
+      </div>
+      <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+        Kelola hak akses, kontak WhatsApp, dan penugasan bidang/OPD untuk pengguna aplikasi SIMETRI.
+      </p>
+    </div>
+
+    <!-- Tambah User Button -->
+    <button 
+      type="button"
+      onclick="document.getElementById('modal-tambah-user').classList.remove('hidden')" 
+      class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-bold shadow-md shadow-indigo-500/20 inline-flex items-center gap-2 transition-all">
+      <i data-lucide="user-plus" class="w-4 h-4"></i>
+      <span>Tambah Pengguna</span>
+    </button>
+  </div>
+
+  <!-- Users Table Card -->
+  <div class="glass-card rounded-2xl border border-slate-200/80 dark:border-slate-800/80 overflow-hidden shadow-sm">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs text-slate-700 dark:text-slate-300">
+        <thead class="bg-slate-50 dark:bg-slate-800/80 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
+          <tr>
+            <th scope="col" class="px-4 py-3.5">Nama &amp; Email</th>
+            <th scope="col" class="px-4 py-3.5">Nomor WhatsApp / HP</th>
+            <th scope="col" class="px-4 py-3.5">Role Akses</th>
+            <th scope="col" class="px-4 py-3.5">Bidang / OPD</th>
+            <th scope="col" class="px-4 py-3.5">Status</th>
+            <th scope="col" class="px-4 py-3.5 text-right">Aksi</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+          {% for u in users %}
+          <tr class="hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors">
+            
+            <!-- Nama & Email -->
+            <td class="px-4 py-3.5">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold shadow-sm flex-shrink-0">
+                  {{ u.initial }}
+                </div>
+                <div>
+                  <div class="font-bold text-slate-900 dark:text-white">{{ u.name or u.email }}</div>
+                  <div class="text-[11px] text-slate-400 dark:text-slate-500">{{ u.email }}</div>
+                </div>
+              </div>
+            </td>
+
+            <!-- Nomor HP -->
+            <td class="px-4 py-3.5 whitespace-nowrap">
+              {% if u.no_hp %}
+              <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40 text-emerald-700 dark:text-emerald-300 font-mono text-[11px] font-semibold">
+                <i data-lucide="phone" class="w-3.5 h-3.5 text-emerald-500"></i>
+                <span>{{ u.no_hp }}</span>
+              </div>
+              {% else %}
+              <span class="text-slate-400 dark:text-slate-500 italic text-[11px]">-</span>
+              {% endif %}
+            </td>
+
+            <!-- Role Akses -->
+            <td class="px-4 py-3.5 whitespace-nowrap">
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold 
+                {% if u.role == 'admin' %}bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200 dark:border-rose-900
+                {% elif u.role == 'user_bidang' %}bg-indigo-100 text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-900
+                {% else %}bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200 dark:border-purple-900{% endif %}">
+                <i data-lucide="{% if u.role == 'admin' %}shield{% elif u.role == 'user_bidang' %}layers{% else %}building-2{% endif %}" class="w-3 h-3"></i>
+                <span>{{ u.role|replace('_', ' ')|title }}</span>
+              </span>
+            </td>
+
+            <!-- Bidang / OPD -->
+            <td class="px-4 py-3.5">
+              {% if u.role == 'user_opd' %}
+                <div class="flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-200">
+                  <i data-lucide="building" class="w-3.5 h-3.5 text-purple-500 flex-shrink-0"></i>
+                  <span>{{ opd_map.get(u.opd_id, "OPD Belum Dipilih") }}</span>
+                </div>
+              {% else %}
+                {% if u.bidang %}
+                <div class="flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-200">
+                  <i data-lucide="briefcase" class="w-3.5 h-3.5 text-indigo-500 flex-shrink-0"></i>
+                  <span>{{ bidang_map.get(u.bidang, u.bidang) }}</span>
+                  <span class="text-[10px] text-slate-400 font-mono">({{ u.bidang }})</span>
+                </div>
+                {% else %}
+                <span class="text-slate-400 dark:text-slate-500 italic text-[11px]">Bappeda Kota Tegal</span>
+                {% endif %}
+              {% endif %}
+            </td>
+
+            <!-- Status Aktif -->
+            <td class="px-4 py-3.5 whitespace-nowrap">
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold {% if u.is_active %}bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300{% else %}bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400{% endif %}">
+                <span class="w-1.5 h-1.5 rounded-full {% if u.is_active %}bg-emerald-500{% else %}bg-slate-400{% endif %}"></span>
+                <span>{{ "Aktif" if u.is_active else "Nonaktif" }}</span>
+              </span>
+            </td>
+
+            <!-- Aksi (Edit, Toggle Status, Hapus) -->
+            <td class="px-4 py-3.5 text-right whitespace-nowrap">
+              <div class="inline-flex items-center gap-1.5">
+                
+                <!-- Tombol Edit -->
+                <button 
+                  type="button"
+                  title="Edit Pengguna"
+                  onclick='openEditUserModal({
+                    id: {{ u.id }},
+                    email: {{ u.email|tojson }},
+                    name: {{ (u.name or "")|tojson }},
+                    no_hp: {{ (u.no_hp or "")|tojson }},
+                    role: {{ u.role|tojson }},
+                    bidang: {{ (u.bidang or "")|tojson }},
+                    opd_id: {{ (u.opd_id or "")|tojson }},
+                    is_active: {{ "true" if u.is_active else "false" }}
+                  })'
+                  class="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-300 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors">
+                  <i data-lucide="pencil" class="w-4 h-4"></i>
+                </button>
+
+                <!-- Tombol Toggle Status -->
+                {% if u.id != user.id %}
+                <form method="post" action="/admin/users/{{ u.id }}/toggle-status" class="inline">
+                  <button 
+                    type="submit" 
+                    title="{{ 'Nonaktifkan Akun' if u.is_active else 'Aktifkan Akun' }}"
+                    class="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors">
+                    <i data-lucide="{{ 'power-off' if u.is_active else 'power' }}" class="w-4 h-4 {{ 'text-slate-400' if u.is_active else 'text-emerald-500' }}"></i>
+                  </button>
+                </form>
+
+                <!-- Tombol Hapus -->
+                <form 
+                  method="post" 
+                  action="/admin/users/{{ u.id }}/hapus" 
+                  class="inline"
+                  onsubmit="return confirm('Apakah Anda yakin ingin menghapus akun {{ u.name or u.email }} dari whitelist SIMETRI? Tindakan ini tidak dapat dibatalkan.');">
+                  <button 
+                    type="submit" 
+                    title="Hapus Pengguna"
+                    class="p-1.5 rounded-lg border border-rose-200 dark:border-rose-900/60 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40 text-rose-500 dark:text-rose-400 transition-colors">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                  </button>
+                </form>
+                {% else %}
+                <span class="text-[11px] text-slate-400 italic px-2">Akun Anda</span>
+                {% endif %}
+
+              </div>
+            </td>
+
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- Modal Tambah Pengguna -->
+<div id="modal-tambah-user" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm hidden">
+  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl max-w-lg w-full p-6 animate-in fade-in zoom-in duration-150">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 mb-4">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-xl bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+          <i data-lucide="user-plus" class="w-4 h-4"></i>
+        </div>
+        <h3 class="text-base font-bold text-slate-900 dark:text-white">Tambah Pengguna Whitelist</h3>
+      </div>
+      <button type="button" onclick="document.getElementById('modal-tambah-user').classList.add('hidden')" class="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <form action="/admin/users/simpan" method="post" class="space-y-4">
+      <div>
+        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Email Google <span class="text-rose-500">*</span></label>
+        <input type="email" name="email" required placeholder="nama@gmail.com" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none focus:border-indigo-500">
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Nama Lengkap</label>
+          <input type="text" name="name" placeholder="Nama Pegawai / Perencana" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none focus:border-indigo-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Nomor WhatsApp / HP</label>
+          <input type="text" name="no_hp" placeholder="Contoh: 081234567890" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none focus:border-indigo-500 font-mono">
+          <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Nomor yang diizinkan melakukan perintah arsip via WhatsApp Webhook.</p>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Role Hak Akses <span class="text-rose-500">*</span></label>
+        <select name="role" id="user-role-select" onchange="toggleRoleFields()" required class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none focus:border-indigo-500">
+          <option value="user_bidang">User Bidang Bappeda</option>
+          <option value="user_opd">User Perangkat Daerah (OPD)</option>
+          <option value="admin">Administrator Sistem</option>
+        </select>
+      </div>
+
+      <div id="field-bidang">
+        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Bidang di Bappeda</label>
+        <select name="bidang" id="user-bidang-select" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none focus:border-indigo-500">
+          <option value="">-- Pilih Bidang --</option>
+          {% for b in bidang_list %}
+          <option value="{{ b.kode }}">{{ b.nama }} ({{ b.kode }})</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div id="field-opd" class="hidden">
+        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Perangkat Daerah (OPD)</label>
+        <select name="opd_id" id="user-opd-select" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none focus:border-indigo-500">
+          <option value="">-- Pilih Perangkat Daerah --</option>
+          {% for opd in opd_list %}
+          <option value="{{ opd.id_sub_pd }}">{{ opd.nama_pd }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2">
+        <button type="button" onclick="document.getElementById('modal-tambah-user').classList.add('hidden')" class="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Batal</button>
+        <button type="submit" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-500/20 transition-all">Simpan Pengguna</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Edit Pengguna -->
+<div id="modal-edit-user" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm hidden">
+  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl max-w-lg w-full p-6 animate-in fade-in zoom-in duration-150">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 mb-4">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+          <i data-lucide="pencil" class="w-4 h-4"></i>
+        </div>
+        <h3 class="text-base font-bold text-slate-900 dark:text-white">Edit Pengguna Whitelist</h3>
+      </div>
+      <button type="button" onclick="closeEditUserModal()" class="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <form action="/admin/users/simpan" method="post" class="space-y-4">
+      <input type="hidden" name="id" id="edit-user-id">
+
+      <div>
+        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Email Google <span class="text-rose-500">*</span></label>
+        <input type="email" name="email" id="edit-user-email" required placeholder="nama@gmail.com" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none focus:border-indigo-500">
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Nama Lengkap</label>
+          <input type="text" name="name" id="edit-user-name" placeholder="Nama Pegawai / Perencana" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none focus:border-indigo-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Nomor WhatsApp / HP</label>
+          <input type="text" name="no_hp" id="edit-user-nohp" placeholder="Contoh: 081234567890" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none focus:border-indigo-500 font-mono">
+          <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Nomor yang diizinkan melakukan perintah arsip via WhatsApp Webhook.</p>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Role Hak Akses <span class="text-rose-500">*</span></label>
+        <select name="role" id="edit-user-role" onchange="toggleEditRoleFields()" required class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none focus:border-indigo-500">
+          <option value="user_bidang">User Bidang Bappeda</option>
+          <option value="user_opd">User Perangkat Daerah (OPD)</option>
+          <option value="admin">Administrator Sistem</option>
+        </select>
+      </div>
+
+      <div id="edit-field-bidang">
+        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Bidang di Bappeda</label>
+        <select name="bidang" id="edit-user-bidang" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none focus:border-indigo-500">
+          <option value="">-- Pilih Bidang --</option>
+          {% for b in bidang_list %}
+          <option value="{{ b.kode }}">{{ b.nama }} ({{ b.kode }})</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div id="edit-field-opd" class="hidden">
+        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Perangkat Daerah (OPD)</label>
+        <select name="opd_id" id="edit-user-opd" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none focus:border-indigo-500">
+          <option value="">-- Pilih Perangkat Daerah --</option>
+          {% for opd in opd_list %}
+          <option value="{{ opd.id_sub_pd }}">{{ opd.nama_pd }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="flex items-center gap-2 pt-1">
+        <input type="checkbox" name="is_active" id="edit-user-active" value="true" class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300">
+        <label for="edit-user-active" class="text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">Status Akun Aktif (Dapat Login)</label>
+      </div>
+
+      <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2">
+        <button type="button" onclick="closeEditUserModal()" class="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Batal</button>
+        <button type="submit" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-500/20 transition-all">Simpan Perubahan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  if (window.lucide) lucide.createIcons();
+
+  function toggleRoleFields() {
+    const role = document.getElementById('user-role-select').value;
+    const fBidang = document.getElementById('field-bidang');
+    const fOpd = document.getElementById('field-opd');
+    
+    if (role === 'user_opd') {
+      fBidang.classList.add('hidden');
+      fOpd.classList.remove('hidden');
+    } else {
+      fBidang.classList.remove('hidden');
+      fOpd.classList.add('hidden');
+    }
+  }
+
+  function toggleEditRoleFields() {
+    const role = document.getElementById('edit-user-role').value;
+    const fBidang = document.getElementById('edit-field-bidang');
+    const fOpd = document.getElementById('edit-field-opd');
+    
+    if (role === 'user_opd') {
+      fBidang.classList.add('hidden');
+      fOpd.classList.remove('hidden');
+    } else {
+      fBidang.classList.remove('hidden');
+      fOpd.classList.add('hidden');
+    }
+  }
+
+  function openEditUserModal(user) {
+    document.getElementById('edit-user-id').value = user.id;
+    document.getElementById('edit-user-email').value = user.email || '';
+    document.getElementById('edit-user-name').value = user.name || '';
+    document.getElementById('edit-user-nohp').value = user.no_hp || '';
+    document.getElementById('edit-user-role').value = user.role || 'user_bidang';
+    document.getElementById('edit-user-bidang').value = user.bidang || '';
+    document.getElementById('edit-user-opd').value = user.opd_id || '';
+    document.getElementById('edit-user-active').checked = Boolean(user.is_active);
+
+    toggleEditRoleFields();
+    document.getElementById('modal-edit-user').classList.remove('hidden');
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function closeEditUserModal() {
+    document.getElementById('modal-edit-user').classList.add('hidden');
+  }
+</script>
+{% endblock %}

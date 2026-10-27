@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="agenda-page space-y-6">
+
+  <!-- Header & Navigation -->
+  <div class="page-heading flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
+    <div>
+      <div class="page-eyebrow">RUANG KERJA / AGENDA</div>
+      <div class="flex items-center gap-2 mb-1">
+        <h1 class="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+          Agenda Kegiatan
+        </h1>
+      </div>
+      <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+        Jadwal rapat koordinasi, undangan eksternal, desk perencanaan, dan dokumentasi foto kegiatan.
+      </p>
+    </div>
+
+    <!-- Tambah Agenda Action -->
+    <button 
+      hx-get="/agenda/form"
+      hx-target="#modal-container"
+      hx-swap="innerHTML"
+      class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-bold shadow-md shadow-indigo-500/20 inline-flex items-center gap-2 transition-all self-start md:self-auto">
+      <i data-lucide="plus" class="w-4 h-4"></i>
+      <span>Tambah Agenda</span>
+    </button>
+  </div>
+
+  <div class="agenda-metrics" aria-label="Ringkasan agenda bulan terpilih">
+    {% for icon, label, value, note, tone in [
+      ('calendar-days', 'Total kegiatan', stats.total, 'Terjadwal pada bulan ini', 'teal'),
+      ('users', 'Rapat koordinasi', stats.rapat, 'Agenda dengan kategori rapat', 'blue'),
+      ('clock-3', 'Akan datang', stats.akan_datang, 'Kegiatan yang perlu dipersiapkan', 'amber')
+    ] %}
+    <div class="metric-card">
+      <div class="metric-top"><span>{{ label }}</span><span class="metric-icon metric-{{ tone }}"><i data-lucide="{{ icon }}"></i></span></div>
+      <strong class="metric-value">{{ value }}</strong>
+      <p>{{ note }}</p>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Calendar Grid View -->
+  <section class="calendar-panel glass-card rounded-2xl" aria-label="Kalender kegiatan">
+    {% set bulan_names = ["", "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"] %}
+    <div class="calendar-toolbar">
+      <div><div class="section-eyebrow">KALENDER KEGIATAN</div><h2>{{ bulan_names[current_month] }} <span>{{ current_year }}</span></h2></div>
+      <div class="calendar-controls">
+        <a href="/agenda" class="calendar-today">Bulan Ini</a>
+        <div class="calendar-arrows">
+          <a href="/agenda?bulan={{ prev_ym }}" aria-label="Bulan sebelumnya"><i data-lucide="chevron-left"></i></a>
+          <a href="/agenda?bulan={{ next_ym }}" aria-label="Bulan berikutnya"><i data-lucide="chevron-right"></i></a>
+        </div>
+      </div>
+    </div>
+    <div class="calendar-scroll"><div class="calendar-content">
+    <div class="calendar-weekdays grid grid-cols-7">
+      <div>Sen</div>
+      <div>Sel</div>
+      <div>Rab</div>
+      <div>Kam</div>
+      <div>Jum</div>
+      <div>Sab</div>
+      <div>Min</div>
+    </div>
+
+    <div class="calendar-grid grid grid-cols-7">
+      <!-- Empty filler days before first day -->
+      {% for _ in range(first_day_weekday) %}
+      <div class="calendar-day calendar-day-empty"></div>
+      {% endfor %}
+
+      <!-- Days of the month -->
+      {% for day in range(1, days_in_month + 1) %}
+      {% set date_str = "%04d-%02d-%02d"|format(current_year, current_month, day) %}
+      {% set day_events = agenda_per_tanggal.get(date_str, []) %}
+      {% set is_today = (current_year == today.year and current_month == today.month and day == today.day) %}
+      
+      <div class="calendar-day transition-all flex flex-col
+        {% if is_today %}
+          calendar-day-today
+        {% else %}
+          calendar-day-regular
+        {% endif %}">
+        
+        <!-- Day Number -->
+        <div class="flex items-center justify-between">
+          <span class="calendar-day-number text-xs font-bold {% if is_today %}text-indigo-600 dark:text-indigo-300 font-black{% else %}text-slate-700 dark:text-slate-300{% endif %}">
+            {{ day }}
+          </span>
+          {% if day_events %}
+          <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+          {% endif %}
+        </div>
+
+        <!-- Event Pills on this day -->
+        <div class="space-y-1 mt-1 overflow-y-auto max-h-[70px]">
+          {% for ev in day_events %}
+          <button type="button"
+            hx-get="/agenda/form/{{ ev.id }}"
+            hx-target="#modal-container"
+            hx-swap="innerHTML"
+            class="calendar-event text-left w-full cursor-pointer text-[10px] px-1.5 py-0.5 rounded truncate font-medium border transition-colors
+              {% if ev.kategori == 'Rapat' %}bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/60 dark:text-sky-300 dark:border-sky-800
+              {% elif ev.kategori == 'Undangan' %}bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800
+              {% else %}bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-800{% endif %}"
+            title="{{ ev.judul }} ({{ ev.rentang_jam }})">
+            {{ ev.jam_mulai }} {{ ev.judul }}
+          </button>
+          {% endfor %}
+        </div>
+
+      </div>
+      {% endfor %}
+      {% for _ in range((7 - (first_day_weekday + days_in_month) % 7) % 7) %}
+      <div class="calendar-day calendar-day-empty" aria-hidden="true"></div>
+      {% endfor %}
+    </div>
+    </div></div>
+    <div class="calendar-legend"><span><i class="legend-dot legend-rapat"></i>Rapat</span><span><i class="legend-dot legend-undangan"></i>Undangan</span><span><i class="legend-dot legend-lainnya"></i>Kunjungan &amp; lainnya</span><span class="calendar-hint">Pilih kegiatan untuk melihat detail</span></div>
+  </section>
+
+  <!-- Agenda List View Below Calendar -->
+  <div class="glass-card rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800/80 space-y-4">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+      <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+        <i data-lucide="list" class="w-4 h-4 text-indigo-500"></i>
+        <span>Rincian Agenda Bulan Ini</span>
+      </h3>
+      <span class="text-xs text-slate-400 font-semibold">{{ agenda_list|length }} Kegiatan</span>
+    </div>
+
+    {% if agenda_list %}
+    <div class="divide-y divide-slate-100 dark:divide-slate-800">
+      {% for ag in agenda_list %}
+      <div class="agenda-item py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 group">
+        <div class="flex items-start gap-3">
+          <!-- Category badge & date -->
+          <div class="text-center min-w-[60px] p-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60">
+            <div class="text-sm font-black text-slate-900 dark:text-white">{{ ag.tanggal.day }}</div>
+            <div class="text-[10px] font-semibold uppercase text-slate-400">{{ ag.tanggal.strftime('%b') }}</div>
+          </div>
+
+          <div>
+            <div class="flex items-center gap-2 mb-1 flex-wrap">
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold 
+                {% if ag.kategori == 'Rapat' %}bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300
+                {% elif ag.kategori == 'Undangan' %}bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300
+                {% else %}bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300{% endif %}">
+                {{ ag.kategori }}
+              </span>
+              {% if ag.bidang %}
+              <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border border-indigo-200/50 dark:border-indigo-800/50 flex items-center gap-1">
+                <i data-lucide="layers" class="w-3 h-3 text-indigo-500"></i>
+                {{ ag.bidang }}
+              </span>
+              {% endif %}
+              <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                <i data-lucide="clock" class="w-3 h-3"></i>
+                {{ ag.rentang_jam }} WIB
+              </span>
+            </div>
+
+            <h4 class="text-sm font-bold text-slate-900 dark:text-white leading-snug">
+              {{ ag.judul }}
+            </h4>
+
+            {% if ag.tempat %}
+            <div class="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1">
+              <i data-lucide="map-pin" class="w-3 h-3 text-rose-500"></i>
+              <span>{{ ag.tempat }}</span>
+            </div>
+            {% endif %}
+
+            {% if ag.keterangan %}
+            <p class="text-xs text-slate-600 dark:text-slate-400 mt-1 line-clamp-1 italic">
+              {{ ag.keterangan }}
+            </p>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 self-end sm:self-center">
+          <button 
+            hx-get="/agenda/form/{{ ag.id }}"
+            hx-target="#modal-container"
+            hx-swap="innerHTML"
+            class="p-2 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors" title="Edit Agenda">
+            <i data-lucide="edit-3" class="w-4 h-4"></i>
+          </button>
+
+          <button 
+            hx-delete="/agenda/delete/{{ ag.id }}"
+            hx-confirm="Hapus agenda kegiatan ini?"
+            hx-target="closest .agenda-item"
+            hx-swap="outerHTML swap:0.2s"
+            class="p-2 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors" title="Hapus Agenda">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="agenda-empty"><span class="empty-icon"><i data-lucide="calendar-plus"></i></span><h3>Belum ada agenda bulan ini</h3><p>Tambahkan kegiatan untuk mulai menyusun jadwal tim.</p><button type="button" hx-get="/agenda/form" hx-target="#modal-container" hx-swap="innerHTML" class="empty-action">Tambah agenda <i data-lucide="arrow-right"></i></button></div>
+    {% endif %}
+  </div>
+
+</div>
+
+{% if request.query_params.get("saved") or request.query_params.get("deleted") %}
+<script>
+  (function() {
+    function notify() {
+      if (typeof showToast === 'function') {
+        {% if request.query_params.get("saved") %}
+        showToast("Agenda kegiatan berhasil disimpan", "success");
+        {% elif request.query_params.get("deleted") %}
+        showToast("Agenda kegiatan berhasil dihapus", "info");
+        {% endif %}
+      }
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', notify);
+    } else {
+      notify();
+    }
+  })();
+</script>
+{% endif %}
+{% endblock %}

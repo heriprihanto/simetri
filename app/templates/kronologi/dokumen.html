@@ -1,0 +1,345 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Header & Actions -->
+  <div class="page-heading flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
+    <div>
+      <div class="flex items-center gap-2 mb-1">
+        <h1 class="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+          Dokumen Perencanaan
+        </h1>
+        <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+          {{ dokumen_list|length }} Dokumen
+        </span>
+      </div>
+      <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+        Master dokumen perencanaan pembangunan daerah tingkat Kota (RPJPD, RPJMD, RKPD) maupun Renstra / Renja Perangkat Daerah.
+      </p>
+    </div>
+
+    {% if not user.is_user_opd %}
+    <button 
+      type="button"
+      onclick="openTambahDokumen()" 
+      class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-bold shadow-md shadow-indigo-500/20 inline-flex items-center gap-2 transition-all">
+      <i data-lucide="plus" class="w-4 h-4"></i>
+      <span>Tambah Dokumen</span>
+    </button>
+    {% endif %}
+  </div>
+
+  <!-- Dokumen Grid Cards -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+    {% for doc in dokumen_list %}
+    <div class="glass-card rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800/80 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group">
+      <div>
+        <div class="flex items-center justify-between gap-2 mb-3">
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+              {{ doc.jenis }}
+            </span>
+            {% if doc.is_default %}
+            <span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-700 flex items-center gap-1">
+              <i data-lucide="star" class="w-3 h-3 fill-amber-400 text-amber-500"></i>
+              Default
+            </span>
+            {% endif %}
+          </div>
+
+          <span class="px-2 py-0.5 rounded text-[11px] font-semibold {% if doc.status == 'selesai' %}bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300{% else %}bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300{% endif %}">
+            {{ doc.status }}
+          </span>
+        </div>
+
+        <h3 class="text-base font-bold text-slate-900 dark:text-white leading-snug mb-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+          {{ doc.nama }}
+        </h3>
+
+        <div class="space-y-1.5 text-xs text-slate-500 dark:text-slate-400 mb-4">
+          <div class="flex items-center gap-1.5">
+            <i data-lucide="calendar" class="w-3.5 h-3.5 text-indigo-500"></i>
+            <span>Periode: <strong class="text-slate-700 dark:text-slate-300">{{ doc.rentang_tahun }}</strong></span>
+          </div>
+
+          <div class="flex items-center gap-1.5">
+            <i data-lucide="building" class="w-3.5 h-3.5 text-purple-500"></i>
+            <span>Cakupan: 
+              <strong class="text-slate-700 dark:text-slate-300">
+                {% if doc.is_tingkat_kota %}
+                Tingkat Kota Tegal
+                {% else %}
+                {{ opd_map.get(doc.opd_id, "OPD") }}
+                {% endif %}
+              </strong>
+            </span>
+          </div>
+
+          {% if doc.alias %}
+          <div class="flex items-center gap-1.5">
+            <i data-lucide="message-square" class="w-3.5 h-3.5 text-emerald-500"></i>
+            <span>Alias WA: 
+              <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40 text-emerald-700 dark:text-emerald-300 font-mono text-[11px] font-bold">
+                simetri {{ doc.alias }}
+              </span>
+            </span>
+          </div>
+          {% endif %}
+
+          {% if doc.deskripsi %}
+          <p class="text-slate-600 dark:text-slate-400 line-clamp-2 pt-1">
+            {{ doc.deskripsi }}
+          </p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Footer Actions -->
+      <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 flex-wrap">
+        <a href="/kronologi?dokumen_id={{ doc.id }}" class="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 inline-flex items-center gap-1 transition-colors">
+          <span>Lihat Kronologi</span>
+          <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-800/50">
+            {{ kejadian_counts.get(doc.id, 0) }}
+          </span>
+          <i data-lucide="arrow-right" class="w-3.5 h-3.5 ml-0.5"></i>
+        </a>
+
+        {% if not user.is_user_opd %}
+        <div class="flex items-center gap-1">
+          <!-- Tombol Edit -->
+          <button 
+            type="button" 
+            onclick='openEditDokumen({{ doc.id }}, {{ doc.nama|tojson }}, {{ (doc.alias or "")|tojson }}, {{ doc.jenis|tojson }}, {{ doc.tahun_awal }}, {{ doc.tahun_akhir }}, {{ doc.opd_id or "null" }}, {{ doc.status|tojson }}, {{ (doc.deskripsi or "")|tojson }}, {{ "true" if doc.is_default else "false" }})'
+            class="px-2 py-1 rounded-lg text-xs font-semibold text-slate-600 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 inline-flex items-center gap-1 transition-colors" 
+            title="Edit Dokumen Perencanaan">
+            <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+            <span>Edit</span>
+          </button>
+
+          <!-- Tombol Hapus -->
+          <button 
+            type="button" 
+            onclick='openHapusDokumen({{ doc.id }}, {{ doc.nama|tojson }}, {{ kejadian_counts.get(doc.id, 0) }})'
+            class="px-2 py-1 rounded-lg text-xs font-semibold text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 inline-flex items-center gap-1 transition-colors" 
+            title="Hapus Dokumen Perencanaan">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            <span>Hapus</span>
+          </button>
+
+          <span class="text-slate-200 dark:text-slate-800">|</span>
+
+          {% if not doc.is_default %}
+          <form method="post" action="/dokumen/{{ doc.id }}/set-default" class="inline">
+            <button type="submit" class="p-1 rounded-lg text-slate-400 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" title="Jadikan dokumen default untuk Kronologi Kejadian">
+              <i data-lucide="star" class="w-3.5 h-3.5"></i>
+            </button>
+          </form>
+          {% endif %}
+
+          <form method="post" action="/dokumen/{{ doc.id }}/toggle-status" class="inline">
+            <button type="submit" class="px-2 py-0.5 rounded text-[10px] font-semibold text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" title="Ubah status pengerjaan dokumen">
+              {{ "Selesai" if doc.status == "selesai" else "Proses" }}
+            </button>
+          </form>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% else %}
+    <div class="col-span-full py-16 text-center text-slate-400">
+      Belum ada dokumen perencanaan.
+    </div>
+    {% endfor %}
+  </div>
+
+</div>
+
+<!-- Modal Tambah / Edit Dokumen -->
+<div id="modal-dokumen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm hidden">
+  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl max-w-lg w-full p-6 animate-in fade-in zoom-in-95 duration-150">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 mb-4">
+      <h3 id="modal-dokumen-title" class="text-base font-bold text-slate-900 dark:text-white">Tambah Dokumen Perencanaan</h3>
+      <button type="button" onclick="closeDokumenModal()" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <form action="/dokumen/simpan" method="post" class="space-y-4">
+      <!-- ID Dokumen (Hidden untuk Edit) -->
+      <input type="hidden" name="id" id="dokumen-form-id" value="">
+
+      <div>
+        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Nama Dokumen <span class="text-rose-500">*</span></label>
+        <input type="text" name="nama" id="dokumen-form-nama" required placeholder="Contoh: RKPD Kota Tegal Tahun 2027" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Alias WhatsApp (Keyword Pesan)</label>
+        <input type="text" name="alias" id="dokumen-form-alias" placeholder="Contoh: rkpd, rpjmd, renstra-dinkes" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none font-mono focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
+        <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Digunakan untuk perintah pencatatan kejadian: <span class="font-mono text-indigo-600 dark:text-indigo-400 font-semibold">simetri [alias] [uraian]</span></p>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Jenis Dokumen <span class="text-rose-500">*</span></label>
+          <select name="jenis" id="dokumen-form-jenis" required class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
+            {% for j in jenis_list %}
+            <option value="{{ j }}">{{ j }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Status</label>
+          <select name="status" id="dokumen-form-status" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
+            <option value="dalam proses">Dalam Proses</option>
+            <option value="selesai">Selesai</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Tahun Awal <span class="text-rose-500">*</span></label>
+          <input type="number" name="tahun_awal" id="dokumen-form-tahun-awal" value="2027" required class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Tahun Akhir <span class="text-rose-500">*</span></label>
+          <input type="number" name="tahun_akhir" id="dokumen-form-tahun-akhir" value="2027" required class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Perangkat Daerah (Kosongkan jika Tingkat Kota)</label>
+        <select name="opd_id" id="dokumen-form-opd" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
+          <option value="">-- Tingkat Kota Tegal (Seluruh OPD) --</option>
+          {% for opd in opd_list %}
+          <option value="{{ opd.id_sub_pd }}">{{ opd.nama_pd }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Deskripsi Ringkas</label>
+        <textarea name="deskripsi" id="dokumen-form-deskripsi" rows="2" placeholder="Catatan atau keterangan cakupan dokumen..." class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none resize-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"></textarea>
+      </div>
+
+      <div class="flex items-center gap-2 pt-1">
+        <input type="checkbox" id="dokumen-form-is-default" name="is_default" value="true" class="w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-indigo-600 focus:ring-indigo-500">
+        <label for="dokumen-form-is-default" class="text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
+          Jadikan dokumen default untuk Kronologi Kejadian
+        </label>
+      </div>
+
+      <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2">
+        <button type="button" onclick="closeDokumenModal()" class="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Batal</button>
+        <button type="submit" id="dokumen-form-submit-btn" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-500/20 transition-all">Simpan Dokumen</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Konfirmasi Hapus Dokumen -->
+<div id="modal-hapus-dokumen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm hidden">
+  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in-95 duration-150">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-10 h-10 rounded-2xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center flex-shrink-0">
+        <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+      </div>
+      <div>
+        <h3 class="text-base font-bold text-slate-900 dark:text-white">Hapus Dokumen Perencanaan</h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400">Konfirmasi penghapusan data dokumen</p>
+      </div>
+    </div>
+
+    <p class="text-xs text-slate-600 dark:text-slate-300 mb-3 leading-relaxed">
+      Apakah Anda yakin ingin menghapus dokumen <strong id="hapus-dokumen-nama" class="text-slate-900 dark:text-white"></strong>?
+    </p>
+
+    <div id="hapus-dokumen-warning" class="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/50 text-[11px] text-amber-800 dark:text-amber-300 mb-4 hidden leading-relaxed">
+    </div>
+
+    <form id="hapus-dokumen-form" method="post" action="">
+      <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+        <button type="button" onclick="closeHapusModal()" class="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+          Batal
+        </button>
+        <button type="submit" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md shadow-rose-500/20 inline-flex items-center gap-1.5 transition-all">
+          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+          <span>Ya, Hapus Dokumen</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function openTambahDokumen() {
+    document.getElementById('dokumen-form-id').value = '';
+    document.getElementById('modal-dokumen-title').innerText = 'Tambah Dokumen Perencanaan';
+    document.getElementById('dokumen-form-submit-btn').innerText = 'Simpan Dokumen';
+    document.getElementById('dokumen-form-nama').value = '';
+    document.getElementById('dokumen-form-alias').value = '';
+    document.getElementById('dokumen-form-jenis').selectedIndex = 0;
+    document.getElementById('dokumen-form-status').value = 'dalam proses';
+    const curYear = new Date().getFullYear();
+    document.getElementById('dokumen-form-tahun-awal').value = curYear;
+    document.getElementById('dokumen-form-tahun-akhir').value = curYear;
+    document.getElementById('dokumen-form-opd').value = '';
+    document.getElementById('dokumen-form-deskripsi').value = '';
+    document.getElementById('dokumen-form-is-default').checked = false;
+    document.getElementById('modal-dokumen').classList.remove('hidden');
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function openEditDokumen(id, nama, alias, jenis, tahunAwal, tahunAkhir, opdId, status, deskripsi, isDefault) {
+    document.getElementById('dokumen-form-id').value = id;
+    document.getElementById('modal-dokumen-title').innerText = 'Edit Dokumen Perencanaan';
+    document.getElementById('dokumen-form-submit-btn').innerText = 'Perbarui Dokumen';
+    document.getElementById('dokumen-form-nama').value = nama || '';
+    document.getElementById('dokumen-form-alias').value = alias || '';
+    document.getElementById('dokumen-form-jenis').value = jenis || '';
+    document.getElementById('dokumen-form-status').value = status || 'dalam proses';
+    document.getElementById('dokumen-form-tahun-awal').value = tahunAwal || new Date().getFullYear();
+    document.getElementById('dokumen-form-tahun-akhir').value = tahunAkhir || new Date().getFullYear();
+    document.getElementById('dokumen-form-opd').value = (opdId !== null && opdId !== undefined) ? opdId : '';
+    document.getElementById('dokumen-form-deskripsi').value = deskripsi || '';
+    document.getElementById('dokumen-form-is-default').checked = Boolean(isDefault);
+    document.getElementById('modal-dokumen').classList.remove('hidden');
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function closeDokumenModal() {
+    document.getElementById('modal-dokumen').classList.add('hidden');
+  }
+
+  function openHapusDokumen(id, nama, count) {
+    document.getElementById('hapus-dokumen-form').action = '/dokumen/' + id + '/hapus';
+    document.getElementById('hapus-dokumen-nama').innerText = nama;
+    const warningEl = document.getElementById('hapus-dokumen-warning');
+    if (count > 0) {
+      warningEl.innerHTML = '⚠️ <strong>Peringatan:</strong> Dokumen ini memiliki <strong>' + count + ' catatan kejadian kronologi</strong>. Seluruh kejadian dan file lampirannya akan ikut terhapus secara permanen!';
+      warningEl.classList.remove('hidden');
+    } else {
+      warningEl.classList.add('hidden');
+    }
+    document.getElementById('modal-hapus-dokumen').classList.remove('hidden');
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function closeHapusModal() {
+    document.getElementById('modal-hapus-dokumen').classList.add('hidden');
+  }
+
+  // Close modals on Escape key
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      closeDokumenModal();
+      closeHapusModal();
+    }
+  });
+
+  if (window.lucide) lucide.createIcons();
+</script>
+{% endblock %}

@@ -1,0 +1,124 @@
+{% set page_title = page_title|default(title|default("SIMETRI - Bappeda Kota Tegal", true), true) %}
+<!DOCTYPE html>
+<html lang="id" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ page_title if page_title else "SIMETRI - Bappeda Kota Tegal" }}</title>
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236366f1'><path d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/></svg>">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            indigo: {50:'#effaf8',100:'#d4f1eb',200:'#a8e3d7',300:'#70cebc',400:'#3bb39f',500:'#209783',600:'#147b6b',700:'#146357',800:'#145046',900:'#13433c',950:'#072b27'},
+            violet: {50:'#effaf8',100:'#d4f1eb',400:'#3bb39f',500:'#209783',600:'#147b6b',700:'#146357',950:'#072b27'},
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- htmx 2.0.4 -->
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Quill Rich Text Editor (v2.0.2) -->
+  <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="/static/css/app.css?v=20261027-2">
+  <script>try { if (localStorage.getItem("simetri-theme") === "dark" || (!localStorage.getItem("simetri-theme") && matchMedia("(prefers-color-scheme: dark)").matches)) document.documentElement.classList.add("dark"); } catch (e) {}</script>
+</head>
+<body class="h-full bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 flex flex-col antialiased transition-colors duration-200">
+
+  <a href="#main-content" class="skip-link">Langsung ke konten</a>
+  <aside class="app-sidebar" aria-label="Navigasi utama">
+    <a href="/kronologi" class="sidebar-brand" aria-label="SIMETRI — beranda">
+      <span class="brand-symbol"><i data-lucide="layers"></i></span>
+      <span><strong>SIMETRI<span class="brand-dot">.</span></strong><small>BAPPEDA KOTA TEGAL</small></span>
+    </a>
+    <div class="sidebar-label">RUANG KERJA</div>
+    <nav class="sidebar-nav">
+      {% for href, icon, label in [('/kronologi', 'git-branch', 'Kronologi Kejadian'), ('/arsip', 'archive', 'Arsip Surat'), ('/agenda', 'calendar-days', 'Agenda Kegiatan'), ('/dokumen', 'files', 'Dokumen Perencanaan')] %}
+      <a href="{{ href }}" {% if request.url.path.startswith(href) %}aria-current="page"{% endif %}>
+        <i data-lucide="{{ icon }}"></i><span>{{ label }}</span>
+        {% if request.url.path.startswith(href) %}<i data-lucide="chevron-right" class="nav-arrow"></i>{% endif %}
+      </a>
+      {% endfor %}
+      {% if user and user.is_admin %}
+      <div class="sidebar-label">ADMINISTRASI</div>
+      {% for href, icon, label in [('/admin/users', 'users', 'Manajemen Pengguna'), ('/admin/audit', 'activity', 'Audit Trail')] %}
+      <a href="{{ href }}" {% if request.url.path.startswith(href) %}aria-current="page"{% endif %}><i data-lucide="{{ icon }}"></i><span>{{ label }}</span></a>
+      {% endfor %}
+      {% endif %}
+    </nav>
+    <div class="sidebar-note"><i data-lucide="landmark"></i><strong>Memori untuk masa depan.</strong><p>Menjaga jejak perencanaan pembangunan Kota Tegal.</p></div>
+    <div class="sidebar-bottom"><span class="status-dot"></span> Sistem Informasi Perencanaan</div>
+  </aside>
+  <header class="workspace-header">
+    <div class="workspace-breadcrumb"><i data-lucide="layout-dashboard"></i><span>Ruang Kerja</span><span>/</span><strong>{{ page_title|default('SIMETRI', true) }}</strong></div>
+    <div class="workspace-account">
+      <button onclick="toggleTheme()" type="button" title="Ganti tema" aria-label="Ganti tema terang atau gelap" class="theme-button"><i data-lucide="sun" class="hidden dark:block"></i><i data-lucide="moon" class="block dark:hidden"></i></button>
+      {% if user %}
+      <span class="account-avatar">{{ user.initial }}</span>
+      <div class="account-info"><strong>{{ user.display_name }}</strong><small>{{ user.role|replace('_', ' ')|title }}</small></div>
+      <a href="/logout" class="theme-button" title="Keluar" aria-label="Keluar dari SIMETRI"><i data-lucide="log-out"></i></a>
+      {% else %}<a href="/login" class="login-link">Masuk</a>{% endif %}
+    </div>
+  </header>
+  <nav class="mobile-navigation" aria-label="Navigasi seluler">
+    {% for href, icon, label in [('/kronologi', 'git-branch', 'Kronologi'), ('/arsip', 'archive', 'Arsip'), ('/agenda', 'calendar-days', 'Agenda'), ('/dokumen', 'files', 'Dokumen')] %}
+    <a href="{{ href }}" {% if request.url.path.startswith(href) %}aria-current="page"{% endif %}><i data-lucide="{{ icon }}"></i><span>{{ label }}</span></a>
+    {% endfor %}
+    {% if user and user.is_admin %}<a href="/admin/users" {% if request.url.path.startswith('/admin') %}aria-current="page"{% endif %}><i data-lucide="shield"></i><span>Admin</span></a><a href="/admin/audit" {% if request.url.path.startswith('/admin/audit') %}aria-current="page"{% endif %}><i data-lucide="activity"></i><span>Audit</span></a>{% endif %}
+  </nav>
+
+  <!-- Main Content Area -->
+  <main id="main-content" class="workspace-main flex-1" tabindex="-1">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Footer -->
+  <footer class="workspace-footer border-t border-slate-200 dark:border-slate-800/80 py-6 text-center text-xs text-slate-500 dark:text-slate-400 bg-white/40 dark:bg-slate-900/40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <div>
+        <span class="font-semibold text-slate-700 dark:text-slate-300">SIMETRI</span> &copy; 2026 Badan Perencanaan Pembangunan Daerah Kota Tegal
+      </div>
+      <div class="text-[11px] text-slate-400 dark:text-slate-500">
+        Institutional Memory &amp; Historical Planning System
+      </div>
+    </div>
+  </footer>
+
+  <!-- Modal Container for htmx -->
+  <div id="modal-container"></div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm pointer-events-none *:pointer-events-auto"></div>
+
+  <!-- App Scripts -->
+  <script src="/static/js/app.js?v=20261027"></script>
+  <script>
+    // Initialize Lucide icons on load and after htmx swap
+    document.addEventListener("DOMContentLoaded", () => lucide.createIcons());
+    document.body.addEventListener("htmx:afterSwap", () => lucide.createIcons());
+  </script>
+</body>
+</html>
