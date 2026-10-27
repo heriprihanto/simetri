@@ -90,7 +90,16 @@ def require_login(request: Request) -> User:
     user = get_current_user(request)
     if not user:
         login_url = settings.url_path("/login", request)
-        raise HTTPException(status_code=302, headers={"Location": login_url})
+        host = request.headers.get("host", "")
+        if ("monevrkpd.tegalkota.go.id" in host or request.url.path.startswith("/simetri")) and not login_url.startswith("/simetri"):
+            login_url = "/simetri" + login_url
+        raise HTTPException(
+            status_code=302,
+            headers={
+                "Location": login_url,
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+            },
+        )
     return user
 
 

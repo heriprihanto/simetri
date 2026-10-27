@@ -68,15 +68,33 @@ except ImportError:
 @app.middleware("http")
 async def prefix_middleware(request: Request, call_next):
     """Auto-detect reverse proxy prefix (X-Forwarded-Prefix) dan inject ke request.scope['root_path']."""
+    host = request.headers.get("host", "")
+    referer = request.headers.get("referer", "")
     fwd_prefix = request.headers.get("x-forwarded-prefix", "").strip().rstrip("/")
+    is_simetri_subpath = (
+        "monevrkpd.tegalkota.go.id" in host
+        or "/simetri" in referer
+        or request.url.path.startswith("/simetri")
+        or bool(settings.ROOT_PATH)
+        or "/simetri" in settings.SERVER_URL
+    )
+
     if fwd_prefix:
         request.scope["root_path"] = fwd_prefix
+    elif is_simetri_subpath:
+        request.scope["root_path"] = "/simetri"
     elif settings.ROOT_PATH:
         request.scope["root_path"] = settings.ROOT_PATH.rstrip("/")
 
-    # Fallback: Jika URL path diawali /simetri tapi root_path belum terisi
-    if not request.scope.get("root_path") and request.url.path.startswith("/simetri"):
-        request.scope["root_path"] = "/simetri"
+    # Tangani root redirect langsung di middleware agar 100% konsisten
+    # dan tidak terpengaruh trailing-slash redirect router
+    if request.url.path in ("/", "/simetri", "/simetri/"):
+        target = "/simetri/kronologi" if is_simetri_subpath else "/kronologi"
+        return RedirectResponse(
+            url=target,
+            status_code=302,
+            headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
+        )
 
     return await call_next(request)
 
@@ -103,22 +121,36 @@ app.include_router(whatsapp.router)
 @app.get("/simetri")
 @app.get("/simetri/")
 async def root(request: Request):
-    """Redirect ke halaman utama (kronologi)."""
+    """Fallback handler ke halaman utama (kronologi)."""
     target = settings.url_path("/kronologi", request)
-    return RedirectResponse(url=target)
+    host = request.headers.get("host", "")
+    if ("monevrkpd.tegalkota.go.id" in host or request.url.path.startswith("/simetri")) and not target.startswith("/simetri"):
+        target = "/simetri" + target
+    return RedirectResponse(
+        url=target,
+        status_code=302,
+        headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
+    )
 
 
 @app.exception_handler(401)
 async def unauthorized_handler(request: Request, exc):
     """Redirect ke login jika tidak terotentikasi."""
     login_url = settings.url_path("/login", request)
+    host = request.headers.get("host", "")
+    if ("monevrkpd.tegalkota.go.id" in host or request.url.path.startswith("/simetri")) and not login_url.startswith("/simetri"):
+        login_url = "/simetri" + login_url
     if request.headers.get("HX-Request"):
         return HTMLResponse(
             content=f'<script>window.location.href="{login_url}";</script>',
             status_code=200,
             headers={"HX-Redirect": login_url},
         )
-    return RedirectResponse(url=login_url)
+    return RedirectResponse(
+        url=login_url,
+        status_code=302,
+        headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
+    )
 
 
 @app.exception_handler(403)

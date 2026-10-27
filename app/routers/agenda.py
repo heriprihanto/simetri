@@ -33,7 +33,12 @@ async def halaman_agenda(
     """Halaman agenda kalender bulanan."""
     user = get_current_user(request)
     if not user:
-        return RedirectResponse(url=settings.url_path("/login", request), status_code=302)
+        login_url = settings.url_path("/login", request)
+        return RedirectResponse(
+            url=login_url,
+            status_code=302,
+            headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
+        )
 
     # Tentukan bulan yang ditampilkan
     today = date.today()

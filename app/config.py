@@ -19,7 +19,7 @@ class Settings(BaseSettings):
 
     def url_path(self, path: str, request: Any = None) -> str:
         """Helper untuk menghasilkan URL dengan prefix ROOT_PATH jika diset,
-        atau auto-detect dari request scope/headers/path."""
+        atau auto-detect dari request scope/headers/path/host/SERVER_URL."""
         root = ""
         if request is not None:
             scope_root = getattr(request, "scope", {}).get("root_path", "")
@@ -29,13 +29,23 @@ class Settings(BaseSettings):
                 fwd_prefix = request.headers.get("x-forwarded-prefix", "").strip().rstrip("/")
                 if fwd_prefix:
                     root = fwd_prefix
+
             if not root and hasattr(request, "url"):
                 req_path = str(getattr(request.url, "path", ""))
                 if req_path.startswith("/simetri"):
                     root = "/simetri"
 
+            if not root and hasattr(request, "headers"):
+                host = request.headers.get("host", "")
+                referer = request.headers.get("referer", "")
+                if "monevrkpd.tegalkota.go.id" in host or "/simetri" in referer:
+                    root = "/simetri"
+
         if not root:
-            root = self.ROOT_PATH.rstrip("/")
+            if "/simetri" in self.SERVER_URL:
+                root = "/simetri"
+            else:
+                root = self.ROOT_PATH.rstrip("/")
 
         if not path.startswith("/"):
             path = "/" + path
