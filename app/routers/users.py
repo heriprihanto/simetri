@@ -7,7 +7,6 @@ from typing import Optional
 
 from fastapi import APIRouter, Request, Depends, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select, desc
 
 from app.database import get_db
@@ -16,12 +15,12 @@ from app.models.user import User, TaOpd
 from app.models.master import MasterBidang
 from app.services.audit_service import log_activity
 from app.config import get_settings
+from app.templates_config import templates
 
 from sqlalchemy import text
 
 settings = get_settings()
 router = APIRouter(prefix="/admin/users", tags=["admin-users"])
-templates = Jinja2Templates(directory="app/templates")
 
 
 @router.get("", response_class=HTMLResponse)

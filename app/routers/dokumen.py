@@ -8,7 +8,6 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy import func
 from sqlmodel import Session, desc, select
 
@@ -19,13 +18,13 @@ from app.models.kejadian import Kejadian, LampiranKejadian
 from app.models.user import TaOpd, User
 from app.services.audit_service import log_activity
 from app.config import get_settings
+from app.templates_config import templates
 from app.services.gdrive_service import delete_file
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
 router = APIRouter(prefix="/dokumen", tags=["dokumen"])
-templates = Jinja2Templates(directory="app/templates")
 
 
 @router.get("", response_class=HTMLResponse)

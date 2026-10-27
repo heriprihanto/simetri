@@ -6,16 +6,15 @@ from typing import Optional
 
 from fastapi import APIRouter, Request, Depends, Query
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select, desc
 
 from app.database import get_db
 from app.middleware import require_admin
 from app.models.user import User
 from app.models.audit import AuditLog
+from app.templates_config import templates
 
 router = APIRouter(prefix="/admin/audit", tags=["admin-audit"])
-templates = Jinja2Templates(directory="app/templates")
 
 
 @router.get("", response_class=HTMLResponse)

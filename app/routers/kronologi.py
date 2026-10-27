@@ -7,7 +7,6 @@ from typing import Optional
 
 from fastapi import APIRouter, Request, Depends, Query, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select, func, col, desc
 
 from app.database import get_session
@@ -23,12 +22,12 @@ from app.services.gdrive_service import (
     get_folder_for_kejadian,
 )
 from app.config import get_settings
+from app.templates_config import templates
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
 router = APIRouter(prefix="/kronologi", tags=["Kronologi"])
-templates = Jinja2Templates(directory="app/templates")
 
 
 def _filter_dokumen_for_user(session: Session, user: User):

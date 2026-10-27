@@ -7,10 +7,9 @@ from typing import Optional
 
 from fastapi import APIRouter, Request, Depends, Query
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select, func
-
 from app.config import get_settings
+from app.templates_config import templates
 from app.database import get_session
 from app.middleware import get_current_user
 from app.models.surat import Surat, AttachmentSurat, JENIS_SURAT, WARNA_JENIS_SURAT
@@ -21,7 +20,6 @@ logger = logging.getLogger(__name__)
 settings = get_settings()
 
 router = APIRouter(prefix="/arsip", tags=["Arsip"])
-templates = Jinja2Templates(directory="app/templates")
 
 
 @router.get("", response_class=HTMLResponse)

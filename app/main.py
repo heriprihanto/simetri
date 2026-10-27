@@ -67,10 +67,8 @@ except ImportError:
 # Static files
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
-# Templates & Jinja Globals
-templates = Jinja2Templates(directory="app/templates")
-templates.env.globals["root_path"] = settings.ROOT_PATH.rstrip("/")
-templates.env.globals["url_path"] = settings.url_path
+# Centralized Templates
+from app.templates_config import templates
 
 # Register Routers
 app.include_router(auth.router)

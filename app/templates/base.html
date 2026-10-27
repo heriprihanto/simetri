@@ -1,4 +1,5 @@
 {% set page_title = page_title|default(title|default("SIMETRI - Bappeda Kota Tegal", true), true) %}
+{% set root_path = root_path|default(request.scope.get('root_path', '')) %}
 <!DOCTYPE html>
 <html lang="id" class="h-full">
 <head>

@@ -8,10 +8,10 @@ from typing import Optional
 import httpx
 from fastapi import APIRouter, Request, Depends, Query
 from fastapi.responses import RedirectResponse, HTMLResponse
-from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 
 from app.config import get_settings
+from app.templates_config import templates
 from app.database import get_session
 from app.models.user import User
 from app.middleware import (
@@ -24,7 +24,6 @@ from app.services.audit_service import log_activity
 logger = logging.getLogger(__name__)
 router = APIRouter()
 settings = get_settings()
-templates = Jinja2Templates(directory="app/templates")
 
 GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"

@@ -9,10 +9,10 @@ from calendar import monthrange
 
 from fastapi import APIRouter, Request, Depends, Query
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select, func
 
 from app.config import get_settings
+from app.templates_config import templates
 from app.database import get_session
 from app.middleware import get_current_user
 from app.models.agenda import Agenda, Foto, KATEGORI_AGENDA, WARNA_KATEGORI_AGENDA
@@ -22,7 +22,6 @@ from app.services.audit_service import log_activity
 
 settings = get_settings()
 router = APIRouter(prefix="/agenda", tags=["Agenda"])
-templates = Jinja2Templates(directory="app/templates")
 
 
 @router.get("", response_class=HTMLResponse)
