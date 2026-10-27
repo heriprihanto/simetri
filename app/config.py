@@ -3,9 +3,10 @@ Konfigurasi aplikasi SIMETRI.
 Menggunakan pydantic-settings untuk memuat dari file .env.
 """
 
+from typing import Any, Optional
+from functools import lru_cache
 from pydantic import model_validator
 from pydantic_settings import BaseSettings
-from functools import lru_cache
 
 
 class Settings(BaseSettings):
