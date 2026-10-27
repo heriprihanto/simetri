@@ -15,9 +15,11 @@ from app.middleware import require_admin
 from app.models.user import User, TaOpd
 from app.models.master import MasterBidang
 from app.services.audit_service import log_activity
+from app.config import get_settings
 
 from sqlalchemy import text
 
+settings = get_settings()
 router = APIRouter(prefix="/admin/users", tags=["admin-users"])
 templates = Jinja2Templates(directory="app/templates")
 
@@ -117,7 +119,7 @@ async def save_user(
         request=request,
     )
 
-    return RedirectResponse(url="/admin/users", status_code=303)
+    return RedirectResponse(url=settings.url_path("/admin/users"), status_code=303)
 
 
 @router.post("/{user_id}/hapus")
@@ -159,7 +161,7 @@ async def delete_user(
         request=request,
     )
 
-    return RedirectResponse(url="/admin/users", status_code=303)
+    return RedirectResponse(url=settings.url_path("/admin/users"), status_code=303)
 
 
 @router.post("/{user_id}/toggle-status")
@@ -191,4 +193,4 @@ async def toggle_user_status(
         request=request,
     )
 
-    return RedirectResponse(url="/admin/users", status_code=303)
+    return RedirectResponse(url=settings.url_path("/admin/users"), status_code=303)

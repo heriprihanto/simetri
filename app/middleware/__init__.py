@@ -74,21 +74,23 @@ def set_session_cookie(response, user: User) -> str:
         httponly=True,
         samesite="lax",
         max_age=JWT_EXPIRY_HOURS * 3600,
-        secure=False,  # Set True di production dengan HTTPS
+        secure=settings.COOKIE_SECURE,
+        path="/",
     )
     return token
 
 
 def clear_session_cookie(response):
     """Hapus session cookie."""
-    response.delete_cookie(key=COOKIE_NAME)
+    response.delete_cookie(key=COOKIE_NAME, path="/")
 
 
 def require_login(request: Request) -> User:
     """Dependency: pastikan user sudah login, redirect ke /login jika belum."""
     user = get_current_user(request)
     if not user:
-        raise HTTPException(status_code=302, headers={"Location": "/login"})
+        login_url = settings.url_path("/login")
+        raise HTTPException(status_code=302, headers={"Location": login_url})
     return user
 
 

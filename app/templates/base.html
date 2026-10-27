@@ -43,29 +43,38 @@
   <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
 
   <!-- Custom CSS -->
-  <link rel="stylesheet" href="/static/css/app.css?v=20261027-2">
+  <link rel="stylesheet" href="{{ root_path }}/static/css/app.css?v=20261027-2">
   <script>try { if (localStorage.getItem("simetri-theme") === "dark" || (!localStorage.getItem("simetri-theme") && matchMedia("(prefers-color-scheme: dark)").matches)) document.documentElement.classList.add("dark"); } catch (e) {}</script>
+  <script>
+    window.SIMETRI_ROOT_PATH = "{{ root_path }}";
+    // Auto-prefix semua request HTMX dengan root_path jika aplikasi berada di subpath reverse proxy
+    document.addEventListener("htmx:configRequest", function(evt) {
+      if (window.SIMETRI_ROOT_PATH && evt.detail.path.startsWith('/') && !evt.detail.path.startsWith(window.SIMETRI_ROOT_PATH)) {
+        evt.detail.path = window.SIMETRI_ROOT_PATH + evt.detail.path;
+      }
+    });
+  </script>
 </head>
 <body class="h-full bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 flex flex-col antialiased transition-colors duration-200">
 
   <a href="#main-content" class="skip-link">Langsung ke konten</a>
   <aside class="app-sidebar" aria-label="Navigasi utama">
-    <a href="/kronologi" class="sidebar-brand" aria-label="SIMETRI — beranda">
+    <a href="{{ root_path }}/kronologi" class="sidebar-brand" aria-label="SIMETRI — beranda">
       <span class="brand-symbol"><i data-lucide="layers"></i></span>
       <span><strong>SIMETRI<span class="brand-dot">.</span></strong><small>BAPPEDA KOTA TEGAL</small></span>
     </a>
     <div class="sidebar-label">RUANG KERJA</div>
     <nav class="sidebar-nav">
       {% for href, icon, label in [('/kronologi', 'git-branch', 'Kronologi Kejadian'), ('/arsip', 'archive', 'Arsip Surat'), ('/agenda', 'calendar-days', 'Agenda Kegiatan'), ('/dokumen', 'files', 'Dokumen Perencanaan')] %}
-      <a href="{{ href }}" {% if request.url.path.startswith(href) %}aria-current="page"{% endif %}>
+      <a href="{{ root_path }}{{ href }}" {% if request.url.path.startswith(href) or request.url.path.startswith(root_path + href) %}aria-current="page"{% endif %}>
         <i data-lucide="{{ icon }}"></i><span>{{ label }}</span>
-        {% if request.url.path.startswith(href) %}<i data-lucide="chevron-right" class="nav-arrow"></i>{% endif %}
+        {% if request.url.path.startswith(href) or request.url.path.startswith(root_path + href) %}<i data-lucide="chevron-right" class="nav-arrow"></i>{% endif %}
       </a>
       {% endfor %}
       {% if user and user.is_admin %}
       <div class="sidebar-label">ADMINISTRASI</div>
       {% for href, icon, label in [('/admin/users', 'users', 'Manajemen Pengguna'), ('/admin/audit', 'activity', 'Audit Trail')] %}
-      <a href="{{ href }}" {% if request.url.path.startswith(href) %}aria-current="page"{% endif %}><i data-lucide="{{ icon }}"></i><span>{{ label }}</span></a>
+      <a href="{{ root_path }}{{ href }}" {% if request.url.path.startswith(href) or request.url.path.startswith(root_path + href) %}aria-current="page"{% endif %}><i data-lucide="{{ icon }}"></i><span>{{ label }}</span></a>
       {% endfor %}
       {% endif %}
     </nav>
@@ -79,15 +88,15 @@
       {% if user %}
       <span class="account-avatar">{{ user.initial }}</span>
       <div class="account-info"><strong>{{ user.display_name }}</strong><small>{{ user.role|replace('_', ' ')|title }}</small></div>
-      <a href="/logout" class="theme-button" title="Keluar" aria-label="Keluar dari SIMETRI"><i data-lucide="log-out"></i></a>
-      {% else %}<a href="/login" class="login-link">Masuk</a>{% endif %}
+      <a href="{{ root_path }}/logout" class="theme-button" title="Keluar" aria-label="Keluar dari SIMETRI"><i data-lucide="log-out"></i></a>
+      {% else %}<a href="{{ root_path }}/login" class="login-link">Masuk</a>{% endif %}
     </div>
   </header>
   <nav class="mobile-navigation" aria-label="Navigasi seluler">
     {% for href, icon, label in [('/kronologi', 'git-branch', 'Kronologi'), ('/arsip', 'archive', 'Arsip'), ('/agenda', 'calendar-days', 'Agenda'), ('/dokumen', 'files', 'Dokumen')] %}
-    <a href="{{ href }}" {% if request.url.path.startswith(href) %}aria-current="page"{% endif %}><i data-lucide="{{ icon }}"></i><span>{{ label }}</span></a>
+    <a href="{{ root_path }}{{ href }}" {% if request.url.path.startswith(href) or request.url.path.startswith(root_path + href) %}aria-current="page"{% endif %}><i data-lucide="{{ icon }}"></i><span>{{ label }}</span></a>
     {% endfor %}
-    {% if user and user.is_admin %}<a href="/admin/users" {% if request.url.path.startswith('/admin') %}aria-current="page"{% endif %}><i data-lucide="shield"></i><span>Admin</span></a><a href="/admin/audit" {% if request.url.path.startswith('/admin/audit') %}aria-current="page"{% endif %}><i data-lucide="activity"></i><span>Audit</span></a>{% endif %}
+    {% if user and user.is_admin %}<a href="{{ root_path }}/admin/users" {% if request.url.path.startswith('/admin') or request.url.path.startswith(root_path + '/admin') %}aria-current="page"{% endif %}><i data-lucide="shield"></i><span>Admin</span></a><a href="{{ root_path }}/admin/audit" {% if request.url.path.startswith('/admin/audit') or request.url.path.startswith(root_path + '/admin/audit') %}aria-current="page"{% endif %}><i data-lucide="activity"></i><span>Audit</span></a>{% endif %}
   </nav>
 
   <!-- Main Content Area -->
@@ -114,7 +123,7 @@
   <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm pointer-events-none *:pointer-events-auto"></div>
 
   <!-- App Scripts -->
-  <script src="/static/js/app.js?v=20261027"></script>
+  <script src="{{ root_path }}/static/js/app.js?v=20261027"></script>
   <script>
     // Initialize Lucide icons on load and after htmx swap
     document.addEventListener("DOMContentLoaded", () => lucide.createIcons());

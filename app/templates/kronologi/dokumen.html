@@ -97,7 +97,7 @@
 
       <!-- Footer Actions -->
       <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 flex-wrap">
-        <a href="/kronologi?dokumen_id={{ doc.id }}" class="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 inline-flex items-center gap-1 transition-colors">
+        <a href="{{ root_path }}/kronologi?dokumen_id={{ doc.id }}" class="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 inline-flex items-center gap-1 transition-colors">
           <span>Lihat Kronologi</span>
           <span class="ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-800/50">
             {{ kejadian_counts.get(doc.id, 0) }}
@@ -130,14 +130,14 @@
           <span class="text-slate-200 dark:text-slate-800">|</span>
 
           {% if not doc.is_default %}
-          <form method="post" action="/dokumen/{{ doc.id }}/set-default" class="inline">
+          <form method="post" action="{{ root_path }}/dokumen/{{ doc.id }}/set-default" class="inline">
             <button type="submit" class="p-1 rounded-lg text-slate-400 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" title="Jadikan dokumen default untuk Kronologi Kejadian">
               <i data-lucide="star" class="w-3.5 h-3.5"></i>
             </button>
           </form>
           {% endif %}
 
-          <form method="post" action="/dokumen/{{ doc.id }}/toggle-status" class="inline">
+          <form method="post" action="{{ root_path }}/dokumen/{{ doc.id }}/toggle-status" class="inline">
             <button type="submit" class="px-2 py-0.5 rounded text-[10px] font-semibold text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" title="Ubah status pengerjaan dokumen">
               {{ "Selesai" if doc.status == "selesai" else "Proses" }}
             </button>
@@ -165,7 +165,7 @@
       </button>
     </div>
 
-    <form action="/dokumen/simpan" method="post" class="space-y-4">
+    <form action="{{ root_path }}/dokumen/simpan" method="post" class="space-y-4">
       <!-- ID Dokumen (Hidden untuk Edit) -->
       <input type="hidden" name="id" id="dokumen-form-id" value="">
 
@@ -315,7 +315,8 @@
   }
 
   function openHapusDokumen(id, nama, count) {
-    document.getElementById('hapus-dokumen-form').action = '/dokumen/' + id + '/hapus';
+    const root = window.SIMETRI_ROOT_PATH || '';
+    document.getElementById('hapus-dokumen-form').action = root + '/dokumen/' + id + '/hapus';
     document.getElementById('hapus-dokumen-nama').innerText = nama;
     const warningEl = document.getElementById('hapus-dokumen-warning');
     if (count > 0) {

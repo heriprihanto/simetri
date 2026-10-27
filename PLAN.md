@@ -597,3 +597,91 @@ pada Dokumen Perencanaan tambahkan alias nama_dokumen_perencanaan untuk bisa dip
 Buat Whatsapp Webhook untuk pencarian arsip dan kronologi kejadian 
 contoh pesan : simetri-cari "Kata / kalimat kunci pencarian"
 Hanya menerima dari nomor yang terdaftar di Daftar Pengguna
+
+
+Aplikasi ini akan dideploy di server https://monevrkpd.tegalkota.go.id/simetri dengan reverse proxy.
+
+### Panduan Konfigurasi Reverse Proxy (Nginx)
+
+#### 1. Konfigurasi Nginx Server Block
+Tambahkan blok `location /simetri` pada konfigurasi Nginx di server `monevrkpd.tegalkota.go.id`:
+
+```nginx
+# Konfigurasi Reverse Proxy untuk SIMETRI pada monevrkpd.tegalkota.go.id
+location /simetri {
+    # Catatan: Tanpa trailing slash agar FastAPI menerima path utuh
+    proxy_pass http://127.0.0.1:8987;
+    
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-Prefix /simetri;
+    proxy_set_header X-Forwarded-Host $host;
+
+    # Pengaturan timeout & buffering untuk upload lampiran dokumen / foto
+    client_max_body_size 50M;
+    proxy_connect_timeout 90s;
+    proxy_send_timeout 90s;
+    proxy_read_timeout 90s;
+
+    # Mendukung WebSocket / HTTP streaming jika diperlukan
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+}
+```
+
+> **Penting**: Gunakan `proxy_pass http://127.0.0.1:8987;` (tanpa slash di akhir URL target), sehingga Uvicorn/FastAPI dapat mencocokkan `root_path="/simetri"` dengan path request browser.
+
+---
+
+#### 2. Konfigurasi File `.env` di Server Production
+
+```env
+# Server
+PORT=8987
+SERVER_URL=https://monevrkpd.tegalkota.go.id/simetri
+ROOT_PATH=/simetri
+COOKIE_SECURE=True
+SECRET_KEY=ganti_dengan_secret_key_acak_dan_kuat_2026
+
+# Database PostgreSQL
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_USER=monevrkpd
+DB_PASSWORD=password_db_anda
+DB_NAME=simetri
+DB_SSLMODE=disable
+
+# Google OAuth 2.0
+# Daftarkan Redirect URI ini di Google Cloud Console -> APIs & Services -> Credentials
+GOOGLE_CLIENT_ID=client_id_google_anda.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=client_secret_google_anda
+GOOGLE_REDIRECT_URI=https://monevrkpd.tegalkota.go.id/simetri/oauthcallback
+
+# Google Service Account (Drive Upload)
+GOOGLE_SERVICE_ACCOUNT_FILE=./secrets/service_account.json
+GDRIVE_PARENT_FOLDER_ID=id_parent_folder_drive_anda
+
+# WhatsApp Webhook & API
+WA_API_URL=http://localhost:3000/send/message
+WA_DEVICE_ID=Simetri
+WA_STORAGE_PATH=/path/ke/go-whatsapp-web-multidevice/src
+```
+
+---
+
+#### 3. Penyesuaian Arsitektural yang Telah Diterapkan di SIMETRI
+1. **FastAPI `root_path` & `ProxyHeadersMiddleware`**:
+   - `app = FastAPI(..., root_path=settings.ROOT_PATH)`
+   - `ProxyHeadersMiddleware` aktif untuk mempercayai header `X-Forwarded-Proto: https`, `X-Forwarded-Prefix: /simetri`, dan `X-Forwarded-For`.
+2. **Jinja2 Template Prefixing**:
+   - Variable `root_path` dan fungsi `url_path` diinjeksikan ke template global Jinja2.
+   - Semua aset statis (`css/app.css`, `js/app.js`), form action, dan navigasi anchor telah diprefix dengan `{{ root_path }}`.
+3. **HTMX Subpath Interceptor (`base.html`)**:
+   - Dilengkapi interceptor otomatis pada event `htmx:configRequest`. Setiap request AJAX HTMX (`hx-get`, `hx-post`, `hx-delete`) otomatis diberi prefix `SIMETRI_ROOT_PATH` jika aplikasi berada di subpath.
+4. **JWT Session Cookie**:
+   - `cookie_path` diset universal (`/`) dan `secure` mengikuti setting `COOKIE_SECURE` (True untuk HTTPS).
+5. **Backend Redirects**:
+   - Seluruh `RedirectResponse` (login, logout, auth Google, dokumen, agenda, user) menggunakan `settings.url_path(...)` agar browser diarahkan ke URL reverse proxy yang tepat.

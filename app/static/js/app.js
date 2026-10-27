@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
     closeModal();
     const message = (e.detail && e.detail.message) ? e.detail.message : 'Data agenda kegiatan berhasil disimpan';
     showToast(message, 'success');
-    if (window.location.pathname.startsWith('/agenda')) {
+    if (window.location.pathname.includes('/agenda')) {
       const targetUrl = (e.detail && e.detail.url) ? e.detail.url : window.location.href;
       setTimeout(() => {
         window.location.href = targetUrl;

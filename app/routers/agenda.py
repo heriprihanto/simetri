@@ -12,6 +12,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select, func
 
+from app.config import get_settings
 from app.database import get_session
 from app.middleware import get_current_user
 from app.models.agenda import Agenda, Foto, KATEGORI_AGENDA, WARNA_KATEGORI_AGENDA
@@ -19,6 +20,7 @@ from app.models.master import MasterBidang
 from app.models.surat import Surat
 from app.services.audit_service import log_activity
 
+settings = get_settings()
 router = APIRouter(prefix="/agenda", tags=["Agenda"])
 templates = Jinja2Templates(directory="app/templates")
 
@@ -32,7 +34,7 @@ async def halaman_agenda(
     """Halaman agenda kalender bulanan."""
     user = get_current_user(request)
     if not user:
-        return RedirectResponse(url="/login", status_code=302)
+        return RedirectResponse(url=settings.url_path("/login"), status_code=302)
 
     # Tentukan bulan yang ditampilkan
     today = date.today()
@@ -199,7 +201,7 @@ async def save_agenda(
     )
 
     bulan_ym = agenda.tanggal.strftime("%Y-%m")
-    redirect_url = f"/agenda?bulan={bulan_ym}&saved=1"
+    redirect_url = settings.url_path(f"/agenda?bulan={bulan_ym}&saved=1")
     trigger_data = json.dumps({
         "refreshAgenda": {
             "url": redirect_url,
@@ -256,7 +258,7 @@ async def delete_agenda(
         request=request,
     )
 
-    redirect_url = f"/agenda?bulan={bulan_ym}&deleted=1"
+    redirect_url = settings.url_path(f"/agenda?bulan={bulan_ym}&deleted=1")
     trigger_data = json.dumps({
         "refreshAgenda": {
             "url": redirect_url,

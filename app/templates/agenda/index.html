@@ -48,10 +48,10 @@
     <div class="calendar-toolbar">
       <div><div class="section-eyebrow">KALENDER KEGIATAN</div><h2>{{ bulan_names[current_month] }} <span>{{ current_year }}</span></h2></div>
       <div class="calendar-controls">
-        <a href="/agenda" class="calendar-today">Bulan Ini</a>
+        <a href="{{ root_path }}/agenda" class="calendar-today">Bulan Ini</a>
         <div class="calendar-arrows">
-          <a href="/agenda?bulan={{ prev_ym }}" aria-label="Bulan sebelumnya"><i data-lucide="chevron-left"></i></a>
-          <a href="/agenda?bulan={{ next_ym }}" aria-label="Bulan berikutnya"><i data-lucide="chevron-right"></i></a>
+          <a href="{{ root_path }}/agenda?bulan={{ prev_ym }}" aria-label="Bulan sebelumnya"><i data-lucide="chevron-left"></i></a>
+          <a href="{{ root_path }}/agenda?bulan={{ next_ym }}" aria-label="Bulan berikutnya"><i data-lucide="chevron-right"></i></a>
         </div>
       </div>
     </div>

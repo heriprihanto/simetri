@@ -9,10 +9,19 @@ from functools import lru_cache
 
 
 class Settings(BaseSettings):
-    # Server
+    # Server & Reverse Proxy
     PORT: int = 8000
     SERVER_URL: str = "http://localhost:8000"
+    ROOT_PATH: str = ""  # Di server: "/simetri" jika diakses via reverse proxy
+    COOKIE_SECURE: bool = False  # Di server: True (HTTPS)
     SECRET_KEY: str = "simetri_bappeda_kota_tegal_super_secret_key_2026"
+
+    def url_path(self, path: str) -> str:
+        """Helper untuk menghasilkan URL dengan prefix ROOT_PATH jika diset."""
+        root = self.ROOT_PATH.rstrip("/")
+        if not path.startswith("/"):
+            path = "/" + path
+        return f"{root}{path}" if root else path
 
     # Database PostgreSQL
     DB_HOST: str = "192.168.50.75"

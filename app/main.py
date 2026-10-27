@@ -53,14 +53,24 @@ app = FastAPI(
     title="SIMETRI Bappeda Kota Tegal",
     description="Sistem Informasi Memori dan Riwayat Perencanaan Pembangunan Daerah",
     version="1.0.0",
+    root_path=settings.ROOT_PATH,
     lifespan=lifespan,
 )
+
+# Reverse proxy headers middleware (trust forwarded proto & for)
+try:
+    from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
+    app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
+except ImportError:
+    pass
 
 # Static files
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
-# Templates
+# Templates & Jinja Globals
 templates = Jinja2Templates(directory="app/templates")
+templates.env.globals["root_path"] = settings.ROOT_PATH.rstrip("/")
+templates.env.globals["url_path"] = settings.url_path
 
 # Register Routers
 app.include_router(auth.router)
@@ -77,19 +87,20 @@ app.include_router(whatsapp.router)
 @app.get("/")
 async def root():
     """Redirect ke halaman utama (kronologi)."""
-    return RedirectResponse(url="/kronologi")
+    return RedirectResponse(url=settings.url_path("/kronologi"))
 
 
 @app.exception_handler(401)
 async def unauthorized_handler(request: Request, exc):
     """Redirect ke login jika tidak terotentikasi."""
+    login_url = settings.url_path("/login")
     if request.headers.get("HX-Request"):
         return HTMLResponse(
-            content='<script>window.location.href="/login";</script>',
+            content=f'<script>window.location.href="{login_url}";</script>',
             status_code=200,
-            headers={"HX-Redirect": "/login"},
+            headers={"HX-Redirect": login_url},
         )
-    return RedirectResponse(url="/login")
+    return RedirectResponse(url=login_url)
 
 
 @app.exception_handler(403)
