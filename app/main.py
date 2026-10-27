@@ -53,7 +53,6 @@ app = FastAPI(
     title="SIMETRI Bappeda Kota Tegal",
     description="Sistem Informasi Memori dan Riwayat Perencanaan Pembangunan Daerah",
     version="1.0.0",
-    root_path=settings.ROOT_PATH,
     lifespan=lifespan,
 )
 
@@ -79,12 +78,14 @@ async def prefix_middleware(request: Request, call_next):
         or "/simetri" in settings.SERVER_URL
     )
 
-    if fwd_prefix:
-        request.scope["root_path"] = fwd_prefix
-    elif is_simetri_subpath:
-        request.scope["root_path"] = "/simetri"
-    elif settings.ROOT_PATH:
-        request.scope["root_path"] = settings.ROOT_PATH.rstrip("/")
+    # Khusus request /static langsung, jangan ubah root_path agar mount /static Starlette melayani file dengan 200 OK
+    if not request.url.path.startswith("/static"):
+        if fwd_prefix:
+            request.scope["root_path"] = fwd_prefix
+        elif is_simetri_subpath:
+            request.scope["root_path"] = "/simetri"
+        elif settings.ROOT_PATH:
+            request.scope["root_path"] = settings.ROOT_PATH.rstrip("/")
 
     # Tangani root redirect langsung di middleware agar 100% konsisten
     # dan tidak terpengaruh trailing-slash redirect router
@@ -99,22 +100,31 @@ async def prefix_middleware(request: Request, call_next):
     return await call_next(request)
 
 
-# Static files
+# Static files — Mount di /static dan /simetri/static
+# agar selalu ditemukan baik Apache mod_proxy melakukan strip prefix maupun tidak
+app.mount("/simetri/static", StaticFiles(directory="app/static"), name="simetri_static")
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # Centralized Templates
 from app.templates_config import templates
 
-# Register Routers
-app.include_router(auth.router)
-app.include_router(kronologi.router)
-app.include_router(dokumen.router)
-app.include_router(arsip.router)
-app.include_router(agenda.router)
-app.include_router(lampiran.router)
-app.include_router(users.router)
-app.include_router(audit.router)
-app.include_router(whatsapp.router)
+# Register Routers — Daftarkan di root DAN dengan prefix /simetri
+# agar kompatibel dengan segala bentuk konfigurasi reverse proxy Apache (ProxyPass /simetri/ atau ProxyPass /simetri)
+routers = [
+    auth.router,
+    kronologi.router,
+    dokumen.router,
+    arsip.router,
+    agenda.router,
+    lampiran.router,
+    users.router,
+    audit.router,
+    whatsapp.router,
+]
+
+for r in routers:
+    app.include_router(r)
+    app.include_router(r, prefix="/simetri")
 
 
 @app.get("/")
