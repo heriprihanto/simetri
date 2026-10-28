@@ -28,3 +28,5 @@ Thumbs.db
 
 # Uploads temp
 uploads/
+message.log
+webhook.log
