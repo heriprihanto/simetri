@@ -19,6 +19,7 @@ from fastapi.responses import JSONResponse
 from sqlmodel import Session
 from app.database import engine
 from app.services.wa_search_service import is_search_request, search_whatsapp
+from app.services.wa_agenda_service import is_agenda_request, handle_whatsapp_agenda
 
 from app.config import get_settings
 from app.services.wa_archive_service import (
@@ -222,6 +223,7 @@ async def receive_webhook(request: Request):
     archive_result = None
     kejadian_result = None
     search_result = None
+    agenda_result = None
 
     if event_type == "message":
         is_from_me = payload.get("is_from_me", False)
@@ -248,7 +250,7 @@ async def receive_webhook(request: Request):
                 sender_lock = get_sender_lock(clean_phone) if clean_phone else None
 
                 async def _handle_sender_message():
-                    nonlocal reply_result, archive_result, kejadian_result, search_result
+                    nonlocal reply_result, archive_result, kejadian_result, search_result, agenda_result
                     registered_user = get_user_by_whatsapp_phone(sender_phone)
                     greeting_name = (
                         registered_user.name
@@ -296,6 +298,44 @@ async def receive_webhook(request: Request):
                                 logger.exception("[WhatsApp Webhook] Pencarian gagal")
                                 search_result = {"status": "error", "reply": "Pencarian belum dapat diproses. Silakan coba lagi beberapa saat."}
                         await _send_and_log_reply("PENCARIAN", search_result.get("reply", ""))
+                        return
+
+                    # Agenda query (simetri-agenda)
+                    if is_agenda_request(message_body):
+                        chat = str(payload.get("chat_id") or sender_phone)
+                        if "@g.us" in chat or "@g.us" in str(sender_phone) or payload.get("is_group"):
+                            agenda_result = {"status": "ignored_group"}
+                            return
+                        if not registered_user:
+                            display_phone = clean_phone or sender_phone
+                            target_name = sender_name or "Bapak/Ibu"
+                            logger.warning(
+                                f"[WhatsApp Webhook] Percobaan cek agenda ditolak: Nomor {sender_phone} ({target_name}) belum terdaftar di Daftar Pengguna."
+                            )
+                            agenda_result = {
+                                "status": "unauthorized",
+                                "reply": (
+                                    f"Halo *{target_name}*,\n\n"
+                                    f"⚠️ *AKSES AGENDA DITOLAK*\n\n"
+                                    f"Nomor WhatsApp Anda (*{display_phone}*) *belum terdaftar* di Daftar Pengguna aplikasi SIMETRI Bappeda Kota Tegal.\n\n"
+                                    f"🔒 Sesuai kebijakan keamanan, hanya nomor WhatsApp yang telah didaftarkan dan aktif di *Daftar Pengguna* yang berhak menanyakan agenda kegiatan.\n\n"
+                                    f"Silakan hubungi Administrator untuk mendaftarkan nomor WhatsApp Anda ke dalam sistem.\n\n"
+                                    f"_SIMETRI — Bappeda Kota Tegal_"
+                                ),
+                            }
+                        else:
+                            try:
+                                with Session(engine) as session:
+                                    agenda_result = handle_whatsapp_agenda(
+                                        message_body, registered_user, session, now_jkt=now_jkt
+                                    )
+                            except Exception:
+                                logger.exception("[WhatsApp Webhook] Query agenda gagal")
+                                agenda_result = {
+                                    "status": "error",
+                                    "reply": "Informasi agenda belum dapat diproses saat ini. Silakan coba lagi beberapa saat.",
+                                }
+                        await _send_and_log_reply("AGENDA", agenda_result.get("reply", ""))
                         return
 
                     has_media = payload_has_media(payload)
@@ -539,6 +579,11 @@ async def receive_webhook(request: Request):
     if search_result is not None:
         response_output["search"] = {
             key: search_result[key] for key in ("status", "arsip_count", "kejadian_count") if key in search_result
+        }
+
+    if agenda_result is not None:
+        response_output["agenda"] = {
+            key: agenda_result[key] for key in ("status", "count", "target_date") if key in agenda_result
         }
 
     if archive_result is not None:

@@ -67,7 +67,7 @@
     </a>
     <div class="sidebar-label">RUANG KERJA</div>
     <nav class="sidebar-nav">
-      {% for href, icon, label in [('/kronologi', 'git-branch', 'Kronologi Kejadian'), ('/arsip', 'archive', 'Arsip Surat'), ('/agenda', 'calendar-days', 'Agenda Kegiatan'), ('/dokumen', 'files', 'Dokumen Perencanaan')] %}
+      {% for href, icon, label in [('/kronologi', 'git-branch', 'Kronologi Kejadian'), ('/arsip', 'archive', 'Arsip Surat'), ('/agenda', 'calendar-days', 'Agenda Kegiatan'), ('/dokumen', 'files', 'Dokumen Perencanaan'), ('/chatbot', 'bot', 'Chatbot AI')] %}
       <a href="{{ root_path }}{{ href }}" {% if request.url.path.startswith(href) or request.url.path.startswith(root_path + href) %}aria-current="page"{% endif %}>
         <i data-lucide="{{ icon }}"></i><span>{{ label }}</span>
         {% if request.url.path.startswith(href) or request.url.path.startswith(root_path + href) %}<i data-lucide="chevron-right" class="nav-arrow"></i>{% endif %}
@@ -95,7 +95,7 @@
     </div>
   </header>
   <nav class="mobile-navigation" aria-label="Navigasi seluler">
-    {% for href, icon, label in [('/kronologi', 'git-branch', 'Kronologi'), ('/arsip', 'archive', 'Arsip'), ('/agenda', 'calendar-days', 'Agenda'), ('/dokumen', 'files', 'Dokumen')] %}
+    {% for href, icon, label in [('/kronologi', 'git-branch', 'Kronologi'), ('/arsip', 'archive', 'Arsip'), ('/agenda', 'calendar-days', 'Agenda'), ('/dokumen', 'files', 'Dokumen'), ('/chatbot', 'bot', 'Chat')] %}
     <a href="{{ root_path }}{{ href }}" {% if request.url.path.startswith(href) or request.url.path.startswith(root_path + href) %}aria-current="page"{% endif %}><i data-lucide="{{ icon }}"></i><span>{{ label }}</span></a>
     {% endfor %}
     {% if user and user.is_admin %}<a href="{{ root_path }}/admin/users" {% if request.url.path.startswith('/admin') or request.url.path.startswith(root_path + '/admin') %}aria-current="page"{% endif %}><i data-lucide="shield"></i><span>Admin</span></a><a href="{{ root_path }}/admin/audit" {% if request.url.path.startswith('/admin/audit') or request.url.path.startswith(root_path + '/admin/audit') %}aria-current="page"{% endif %}><i data-lucide="activity"></i><span>Audit</span></a>{% endif %}
@@ -124,8 +124,11 @@
   <!-- Toast Notification Container -->
   <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm pointer-events-none *:pointer-events-auto"></div>
 
+  <!-- Floating Chatbot Widget -->
+  {% include "partials/chatbot_widget.html" %}
+
   <!-- App Scripts -->
-  <script src="{{ root_path }}/static/js/app.js?v=20261027"></script>
+  <script src="{{ root_path }}/static/js/app.js?v=20261028"></script>
   <script>
     // Initialize Lucide icons on load and after htmx swap
     document.addEventListener("DOMContentLoaded", () => lucide.createIcons());

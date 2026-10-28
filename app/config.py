@@ -72,6 +72,10 @@ class Settings(BaseSettings):
     GDRIVE_ARSIP_FOLDER_NAME: str = "ARSIP_SURAT_BAPPEDA"
     GDRIVE_GALERI_FOLDER_NAME: str = "GALERI_KEGIATAN_BAPPEDA"
 
+    # Google Gemini AI (Chatbot)
+    GEMINI_API_KEY: str = ""
+    GEMINI_MODEL: str = "gemini-3.5-flash"
+
     # WhatsApp Gateway API & Storage
     WA_API_URL: str = "http://localhost:3000/send/message"
     WA_DEVICE_ID: str = "Simetri"

@@ -1,0 +1,271 @@
+<!-- Floating Chatbot Widget — SIMETRI -->
+{% if user and not ('/chatbot' in request.url.path) %}
+<div id="chatbot-widget" class="chatbot-widget" aria-label="Chatbot SIMETRI">
+  <!-- Toggle Button -->
+  <button id="chatbot-toggle" onclick="toggleChatWidget()" class="chatbot-toggle-btn" title="Buka Asisten SIMETRI" aria-label="Buka atau tutup chatbot">
+    <i data-lucide="bot" class="chatbot-toggle-icon-open"></i>
+    <i data-lucide="x" class="chatbot-toggle-icon-close" style="display:none"></i>
+    <span class="chatbot-toggle-pulse"></span>
+  </button>
+
+  <!-- Chat Panel -->
+  <div id="chatbot-panel" class="chatbot-panel" style="display:none">
+    <!-- Panel Header -->
+    <div class="chatbot-panel-header">
+      <div class="flex items-center gap-2.5">
+        <div class="chatbot-avatar-sm">
+          <i data-lucide="bot"></i>
+        </div>
+        <div>
+          <strong class="text-sm font-semibold">Asisten SIMETRI</strong>
+          <span class="chatbot-status-online">● Online</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-1">
+        <a href="{{ root_path }}/chatbot" class="chatbot-panel-action" title="Buka halaman penuh">
+          <i data-lucide="maximize-2"></i>
+        </a>
+        <button onclick="clearChatWidget()" class="chatbot-panel-action" title="Hapus percakapan">
+          <i data-lucide="trash-2"></i>
+        </button>
+        <button onclick="toggleChatWidget()" class="chatbot-panel-action" title="Tutup">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Panel Messages -->
+    <div id="chatbot-widget-messages" class="chatbot-panel-messages">
+      <div class="chatbot-welcome chatbot-welcome-mini">
+        <div class="chatbot-welcome-icon-sm">
+          <i data-lucide="bot"></i>
+        </div>
+        <p><strong>Halo!</strong> Ada yang bisa saya bantu tentang data SIMETRI?</p>
+        <div class="chatbot-suggestions-mini">
+          <button onclick="askSuggestion(this, 'widget')" class="chatbot-suggestion-chip-sm">
+            <span>Statistik data SIMETRI</span>
+          </button>
+          <button onclick="askSuggestion(this, 'widget')" class="chatbot-suggestion-chip-sm">
+            <span>Cari kronologi RKPD</span>
+          </button>
+          <button onclick="askSuggestion(this, 'widget')" class="chatbot-suggestion-chip-sm">
+            <span>Arsip surat terbaru</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel Input -->
+    <div class="chatbot-panel-input">
+      <form onsubmit="sendMessageWidget(event)" class="chatbot-widget-form">
+        <textarea
+          id="chatbot-widget-input"
+          placeholder="Ketik pertanyaan..."
+          rows="1"
+          onkeydown="handleChatKeydown(event, 'widget')"
+          oninput="autoResize(this)"
+        ></textarea>
+        <button type="submit" class="chatbot-send-btn-sm" title="Kirim">
+          <i data-lucide="send-horizontal"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+// Widget-specific code (shared functions are in chatbot/index.html or inline)
+let widgetHistory = [];
+let widgetIsLoading = false;
+const WIDGET_API_URL = window.SIMETRI_ROOT_PATH + '/api/chatbot';
+
+function toggleChatWidget() {
+  const panel = document.getElementById('chatbot-panel');
+  const iconOpen = document.querySelector('.chatbot-toggle-icon-open');
+  const iconClose = document.querySelector('.chatbot-toggle-icon-close');
+  const pulse = document.querySelector('.chatbot-toggle-pulse');
+  const isOpen = panel.style.display !== 'none';
+
+  if (isOpen) {
+    panel.style.display = 'none';
+    iconOpen.style.display = '';
+    iconClose.style.display = 'none';
+    if (pulse) pulse.style.display = '';
+  } else {
+    panel.style.display = 'flex';
+    iconOpen.style.display = 'none';
+    iconClose.style.display = '';
+    if (pulse) pulse.style.display = 'none';
+    document.getElementById('chatbot-widget-input').focus();
+    const msgs = document.getElementById('chatbot-widget-messages');
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+}
+
+// Re-define shared functions here for widget if the fullpage JS isn't loaded
+if (typeof escapeHtml === 'undefined') {
+  window.escapeHtml = function(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  };
+}
+
+if (typeof renderMarkdown === 'undefined') {
+  window.renderMarkdown = function(text) {
+    if (!text) return '';
+    let html = escapeHtml(text);
+    html = html.replace(/```([a-z]*)\n([\s\S]*?)```/g, '<pre class="bg-slate-900 text-slate-100 p-2.5 rounded-xl my-1.5 overflow-x-auto text-[11px] font-mono"><code>$2</code></pre>');
+    html = html.replace(/`([^`]+)`/g, '<code class="px-1 py-0.5 rounded bg-slate-100 dark:bg-slate-800 font-mono text-[11px] text-teal-600 dark:text-teal-400">$1</code>');
+    html = html.replace(/\*\*([^*]+)\*\*/g, '<strong class="font-bold text-slate-900 dark:text-white">$1</strong>');
+    html = html.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em class="italic">$1</em>');
+    html = html.replace(/_([^_]+)_/g, '<em class="italic">$1</em>');
+    html = html.replace(/^---$/gm, '<hr class="my-2 border-slate-200 dark:border-slate-700">');
+    html = html.replace(/^### (.*$)/gm, '<h4 class="text-xs font-bold text-slate-900 dark:text-white mt-2 mb-1">$1</h4>');
+    html = html.replace(/^## (.*$)/gm, '<h3 class="text-sm font-bold text-slate-900 dark:text-white mt-3 mb-1">$1</h3>');
+    html = html.replace(/^# (.*$)/gm, '<h2 class="text-base font-black text-slate-900 dark:text-white mt-3 mb-1.5">$1</h2>');
+    html = html.replace(/^> (.*$)/gm, '<blockquote class="border-l-3 border-teal-500 pl-2 my-1.5 text-slate-500 italic text-[11px]">$1</blockquote>');
+    html = html.replace(/^[*-] (.*$)/gm, '<li class="ml-3 list-disc text-xs">$1</li>');
+    html = html.replace(/(<li class="ml-3 list-disc[^>]*>.*?<\/li>\n?)+/g, '<ul class="my-1.5 space-y-0.5">$&</ul>');
+    html = html.replace(/^\d+\. (.*$)/gm, '<li class="ml-3 list-decimal text-xs">$1</li>');
+    html = html.replace(/(<li class="ml-3 list-decimal[^>]*>.*?<\/li>\n?)+/g, '<ol class="my-1.5 space-y-0.5">$&</ol>');
+    html = html.replace(/\n\n/g, '</p><p class="mt-1.5 text-xs leading-relaxed">');
+    html = html.replace(/\n/g, '<br>');
+    return `<div class="leading-relaxed text-xs text-slate-700 dark:text-slate-300">${html}</div>`;
+  };
+}
+
+if (typeof autoResize === 'undefined') {
+  window.autoResize = function(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+  };
+}
+
+if (typeof handleChatKeydown === 'undefined') {
+  window.handleChatKeydown = function(e, target) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (target === 'widget') sendMessageWidget(e);
+    }
+  };
+}
+
+if (typeof askSuggestion === 'undefined') {
+  window.askSuggestion = function(btn, target) {
+    const text = btn.querySelector('span').textContent;
+    if (target === 'widget') {
+      document.getElementById('chatbot-widget-input').value = text;
+      sendMessageWidget(new Event('submit'));
+    }
+  };
+}
+
+function addWidgetMessage(role, content, animate = true) {
+  const container = document.getElementById('chatbot-widget-messages');
+  const welcome = container.querySelector('.chatbot-welcome');
+  if (welcome && role === 'user') welcome.remove();
+
+  const msgDiv = document.createElement('div');
+  msgDiv.className = `chatbot-message chatbot-message-${role}${animate ? ' chatbot-message-animate' : ''}`;
+
+  const userInitial = '{{ user.initial }}' || 'U';
+
+  if (role === 'user') {
+    msgDiv.innerHTML = `
+      <div class="chatbot-message-content">
+        <div class="chatbot-message-bubble chatbot-user-bubble">
+          <p>${escapeHtml(content)}</p>
+        </div>
+      </div>
+      <div class="chatbot-message-avatar chatbot-user-avatar-sm">
+        <span>${userInitial}</span>
+      </div>
+    `;
+  } else {
+    msgDiv.innerHTML = `
+      <div class="chatbot-message-avatar chatbot-bot-avatar-sm">
+        <i data-lucide="bot"></i>
+      </div>
+      <div class="chatbot-message-content">
+        <div class="chatbot-message-bubble chatbot-bot-bubble">
+          ${renderMarkdown(content)}
+        </div>
+      </div>
+    `;
+  }
+
+  container.appendChild(msgDiv);
+  lucide.createIcons({nameAttr: 'data-lucide', attrs: {}});
+  container.scrollTop = container.scrollHeight;
+  return msgDiv;
+}
+
+function addWidgetTyping() {
+  const container = document.getElementById('chatbot-widget-messages');
+  const div = document.createElement('div');
+  div.className = 'chatbot-message chatbot-message-bot chatbot-typing-indicator chatbot-message-animate';
+  div.innerHTML = `
+    <div class="chatbot-message-avatar chatbot-bot-avatar-sm">
+      <i data-lucide="bot"></i>
+    </div>
+    <div class="chatbot-message-content">
+      <div class="chatbot-message-bubble chatbot-bot-bubble">
+        <div class="chatbot-typing-dots"><span></span><span></span><span></span></div>
+      </div>
+    </div>
+  `;
+  container.appendChild(div);
+  lucide.createIcons({nameAttr: 'data-lucide', attrs: {}});
+  container.scrollTop = container.scrollHeight;
+  return div;
+}
+
+async function sendMessageWidget(e) {
+  e.preventDefault();
+  const input = document.getElementById('chatbot-widget-input');
+  const message = input.value.trim();
+  if (!message || widgetIsLoading) return;
+
+  widgetIsLoading = true;
+  input.value = '';
+  input.style.height = 'auto';
+
+  addWidgetMessage('user', message);
+  widgetHistory.push({role: 'user', content: message});
+
+  const typingEl = addWidgetTyping();
+
+  try {
+    const res = await fetch(WIDGET_API_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({message, history: widgetHistory.slice(-20)}),
+    });
+    const data = await res.json();
+    typingEl.remove();
+
+    const reply = data.reply || 'Maaf, terjadi kesalahan. Silakan coba lagi.';
+    addWidgetMessage('bot', reply);
+    widgetHistory.push({role: 'assistant', content: reply});
+  } catch (err) {
+    typingEl.remove();
+    addWidgetMessage('bot', 'Maaf, terjadi kesalahan koneksi. Silakan coba lagi.');
+  } finally {
+    widgetIsLoading = false;
+  }
+}
+
+function clearChatWidget() {
+  const container = document.getElementById('chatbot-widget-messages');
+  container.innerHTML = `
+    <div class="chatbot-welcome chatbot-welcome-mini">
+      <div class="chatbot-welcome-icon-sm"><i data-lucide="bot"></i></div>
+      <p><strong>Percakapan dihapus.</strong> Silakan ketik pertanyaan baru.</p>
+    </div>
+  `;
+  widgetHistory = [];
+  lucide.createIcons();
+}
+</script>
+{% endif %}

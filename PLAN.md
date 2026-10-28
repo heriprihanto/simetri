@@ -57,6 +57,13 @@ Kalender kegiatan Bappeda.
 - Upload foto dokumentasi kegiatan ke Google Drive
 - Sinkronisasi ke Google Calendar (opsional)
 
+### 4. Chatbot Asisten SIMETRI (AI RAG Assistant)
+Asisten cerdas berbasis Google Gemini AI & RAG (Retrieval-Augmented Generation) untuk menjawab pertanyaan terkait data SIMETRI:
+- Pencarian dan penjelasan data Arsip Surat, Kronologi Kejadian, Dokumen Perencanaan, dan Agenda Kegiatan.
+- Penegakan hak akses berbasis peran pengguna (Admin, Perencana OPD, Publik/Guest).
+- Tersedia dalam 2 mode: **Halaman Penuh** (`/chatbot`) dan **Floating Chat Widget** di seluruh halaman.
+- Mekanisme fallback otomatis ke pencarian database lokal jika API Gemini tidak dapat dijangkau.
+
 ---
 
 ## Struktur Proyek
@@ -97,14 +104,17 @@ SIMETRI/
 │   │   ├── agenda.py             # CRUD agenda kegiatan
 │   │   ├── lampiran.py           # Upload file/foto ke Google Drive
 │   │   ├── users.py              # Manajemen pengguna (admin only)
-│   │   └── audit.py              # Audit trail (admin only)
+│   │   ├── audit.py              # Audit trail (admin only)
+│   │   ├── whatsapp.py           # Integrasi WhatsApp gateway
+│   │   └── chatbot.py            # Chatbot AI (halaman & API)
 │   │
 │   ├── services/                 # Business logic & external APIs
 │   │   ├── __init__.py
 │   │   ├── auth_service.py       # Google OAuth flow, JWT
 │   │   ├── gdrive_service.py     # Google Drive upload/folder/delete
 │   │   ├── calendar_service.py   # Google Calendar sync (opsional)
-│   │   └── audit_service.py      # Logging audit trail
+│   │   ├── audit_service.py      # Logging audit trail
+│   │   └── chatbot_service.py    # RAG search & Gemini API integration
 │   │
 │   ├── middleware/                # FastAPI middleware
 │   │   ├── __init__.py
@@ -113,6 +123,8 @@ SIMETRI/
 │   ├── templates/                # Jinja2 HTML templates
 │   │   ├── base.html             # Layout utama (navbar, footer, tema)
 │   │   ├── login.html            # Halaman login Google OAuth
+│   │   ├── chatbot/
+│   │   │   └── index.html        # Halaman Chatbot SIMETRI
 │   │   ├── kronologi/
 │   │   │   ├── index.html        # Timeline view + filter
 │   │   │   ├── form.html         # Form entri/edit kejadian (htmx modal)
@@ -132,7 +144,8 @@ SIMETRI/
 │   │       ├── surat_table.html
 │   │       ├── agenda_list.html
 │   │       ├── toast.html
-│   │       └── modal.html
+│   │       ├── modal.html
+│   │       └── chatbot_widget.html # Floating chat widget
 │   │
 │   └── static/                   # Static assets
 │       ├── css/
@@ -687,3 +700,45 @@ WA_STORAGE_PATH=/path/ke/go-whatsapp-web-multidevice/src
    - Seluruh `RedirectResponse` (login, logout, auth Google, dokumen, agenda, user) menggunakan `settings.url_path(...)` agar browser diarahkan ke URL reverse proxy yang tepat.
 
 
+---
+
+## WhatsApp Webhook — Pengecekan Agenda Kegiatan
+
+Menyediakan query jadwal agenda kegiatan melalui pesan WhatsApp:
+- **Perintah Utama:** `simetri-agenda [parameter_tanggal]`
+- **Otorisasi Ketat:** Hanya nomor WhatsApp yang terdaftar dan aktif di **Daftar Pengguna** SIMETRI yang dapat melakukan query agenda. Permintaan dari nomor tak terdaftar akan ditolak otomatis dengan notifikasi resmi.
+- **Pesan Grup Diabaikan:** Query otomatis diabaikan pada obrolan grup (`@g.us`).
+
+### Contoh Format Pesan:
+1. `simetri-agenda hari ini` atau `simetri-agenda` (agenda hari ini)
+2. `simetri-agenda besok` (agenda esok hari)
+3. `simetri-agenda tanggal 2026-10-29` (format ISO YYYY-MM-DD)
+4. `simetri-agenda tanggal 29-10-2026` (format Indonesia DD-MM-YYYY)
+5. `simetri-agenda tanggal 29 Oktober 2026` (format nama bulan)
+
+### Format Balasan WhatsApp:
+```
+Halo *Herry Prihanto*,
+
+📅 *AGENDA BAPPEDA KOTA TEGAL*
+🗓️ *Kamis, 29 Oktober 2026*
+📊 Total: *2 Agenda Kegiatan*
+────────────────────
+1️⃣ *[Rapat] Rapat Koordinasi Teknis RKPD 2027*
+   ⏰ *Waktu:* 09:00 – 11:30 WIB
+   📍 *Tempat:* Ruang Rapat Bappeda Lt. 2
+   🏢 *Bidang:* Perekonomian
+   📝 *Ket:* Pembahasan awal indikator makro pembangunan.
+
+2️⃣ *[Undangan] Musrenbang Kecamatan Tegal Barat*
+   ⏰ *Waktu:* 13:00 WIB
+   📍 *Tempat:* Pendopo Kecamatan Tegal Barat
+   🏢 *Bidang:* PPEPD
+────────────────────
+_SIMETRI — Bappeda Kota Tegal_
+```
+
+
+  buat whatsapp webhook untuk menanyakan agenda
+  contoh pesan : simetri-agenda hari ini, simetri-agenda tanggal 2026-10-29, simetri-agenda tanggal 29-10-2026
+  Hanya menerima dari nomor yang terdaftar di Daftar Pengguna

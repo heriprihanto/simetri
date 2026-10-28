@@ -29,6 +29,7 @@ from app.routers import (
     users,
     audit,
     whatsapp,
+    chatbot,
 )
 
 settings = get_settings()
@@ -120,6 +121,7 @@ routers = [
     users.router,
     audit.router,
     whatsapp.router,
+    chatbot.router,
 ]
 
 for r in routers:
