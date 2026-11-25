@@ -6,13 +6,11 @@ Main FastAPI Application Entrypoint.
 """
 
 import os
-from pathlib import Path
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 
 from app.config import get_settings
 from app.database import engine
@@ -25,6 +23,7 @@ from app.routers import (
     dokumen,
     arsip,
     agenda,
+    pagu,
     lampiran,
     users,
     audit,
@@ -55,68 +54,34 @@ app = FastAPI(
     description="Sistem Informasi Memori dan Riwayat Perencanaan Pembangunan Daerah",
     version="1.0.0",
     lifespan=lifespan,
+    root_path=settings.ROOT_PATH,
 )
 
-# Reverse proxy headers middleware (trust forwarded proto & for)
-try:
-    from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
-    app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
-except ImportError:
-    pass
-
-
+# Uvicorn handles forwarded headers only from FORWARDED_ALLOW_IPS.
+# Normalize stripped paths too, including the scope used by mounted StaticFiles.
 @app.middleware("http")
-async def prefix_middleware(request: Request, call_next):
-    """Auto-detect reverse proxy prefix (X-Forwarded-Prefix) dan inject ke request.scope['root_path']."""
-    host = request.headers.get("host", "")
-    referer = request.headers.get("referer", "")
-    fwd_prefix = request.headers.get("x-forwarded-prefix", "").strip().rstrip("/")
-    is_simetri_subpath = (
-        "monevrkpd.tegalkota.go.id" in host
-        or "/simetri" in referer
-        or request.url.path.startswith("/simetri")
-        or bool(settings.ROOT_PATH)
-        or "/simetri" in settings.SERVER_URL
-    )
-
-    # Khusus request /static langsung, jangan ubah root_path agar mount /static Starlette melayani file dengan 200 OK
-    if not request.url.path.startswith("/static"):
-        if fwd_prefix:
-            request.scope["root_path"] = fwd_prefix
-        elif is_simetri_subpath:
-            request.scope["root_path"] = "/simetri"
-        elif settings.ROOT_PATH:
-            request.scope["root_path"] = settings.ROOT_PATH.rstrip("/")
-
-    # Tangani root redirect langsung di middleware agar 100% konsisten
-    # dan tidak terpengaruh trailing-slash redirect router
-    if request.url.path in ("/", "/simetri", "/simetri/"):
-        target = "/simetri/kronologi" if is_simetri_subpath else "/kronologi"
-        return RedirectResponse(
-            url=target,
-            status_code=302,
-            headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
-        )
-
+async def normalize_proxy_path(request: Request, call_next):
+    prefix = settings.ROOT_PATH
+    path = request.scope["path"]
+    if prefix and path != prefix and not path.startswith(prefix + "/"):
+        request.scope["path"] = prefix + path
+        request.scope["raw_path"] = prefix.encode() + request.scope.get("raw_path", path.encode())
     return await call_next(request)
 
 
-# Static files — Mount di /static dan /simetri/static
-# agar selalu ditemukan baik Apache mod_proxy melakukan strip prefix maupun tidak
-app.mount("/simetri/static", StaticFiles(directory="app/static"), name="simetri_static")
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # Centralized Templates
 from app.templates_config import templates
 
-# Register Routers — Daftarkan di root DAN dengan prefix /simetri
-# agar kompatibel dengan segala bentuk konfigurasi reverse proxy Apache (ProxyPass /simetri/ atau ProxyPass /simetri)
+# Register each route once; root_path supplies the public prefix.
 routers = [
     auth.router,
     kronologi.router,
     dokumen.router,
     arsip.router,
     agenda.router,
+    pagu.router,
     lampiran.router,
     users.router,
     audit.router,
@@ -126,18 +91,12 @@ routers = [
 
 for r in routers:
     app.include_router(r)
-    app.include_router(r, prefix="/simetri")
 
 
 @app.get("/")
-@app.get("/simetri")
-@app.get("/simetri/")
 async def root(request: Request):
     """Fallback handler ke halaman utama (kronologi)."""
     target = settings.url_path("/kronologi", request)
-    host = request.headers.get("host", "")
-    if ("monevrkpd.tegalkota.go.id" in host or request.url.path.startswith("/simetri")) and not target.startswith("/simetri"):
-        target = "/simetri" + target
     return RedirectResponse(
         url=target,
         status_code=302,
@@ -149,9 +108,6 @@ async def root(request: Request):
 async def unauthorized_handler(request: Request, exc):
     """Redirect ke login jika tidak terotentikasi."""
     login_url = settings.url_path("/login", request)
-    host = request.headers.get("host", "")
-    if ("monevrkpd.tegalkota.go.id" in host or request.url.path.startswith("/simetri")) and not login_url.startswith("/simetri"):
-        login_url = "/simetri" + login_url
     if request.headers.get("HX-Request"):
         return HTMLResponse(
             content=f'<script>window.location.href="{login_url}";</script>',

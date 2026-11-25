@@ -112,7 +112,7 @@
 
       <!-- Actions -->
       <div class="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800 text-xs">
-        <button hx-get="/kronologi/detail/{{ k.id }}" hx-target="#modal-container" hx-swap="innerHTML"
+        <button hx-get="{{ root_path }}/kronologi/detail/{{ k.id }}" hx-target="#modal-container" hx-swap="innerHTML"
           class="font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center gap-1 transition-colors">
           <span>Lihat Selengkapnya</span>
           <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
@@ -120,14 +120,14 @@
 
         <div class="flex items-center gap-1.5">
           <!-- Edit Button -->
-          <button hx-get="/kronologi/form/{{ k.id }}" hx-target="#modal-container" hx-swap="innerHTML"
+          <button hx-get="{{ root_path }}/kronologi/form/{{ k.id }}" hx-target="#modal-container" hx-swap="innerHTML"
             class="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
             title="Edit Kejadian">
             <i data-lucide="edit-3" class="w-4 h-4"></i>
           </button>
 
           <!-- Delete Button -->
-          <button hx-delete="/kronologi/delete/{{ k.id }}"
+          <button hx-delete="{{ root_path }}/kronologi/delete/{{ k.id }}"
             hx-confirm="Apakah Anda yakin ingin menghapus kejadian ini beserta seluruh lampirannya?"
             hx-target="closest .relative.group" hx-swap="outerHTML swap:0.3s"
             class="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors"
@@ -151,14 +151,14 @@
   </div>
   <div class="flex items-center gap-1.5">
     {% if page > 1 %}
-    <button hx-get="/kronologi?page={{ page - 1 }}" hx-include="[name='dokumen_id'], [name='jenis'], [name='q']"
+    <button hx-get="{{ root_path }}/kronologi?page={{ page - 1 }}" hx-include="[name='dokumen_id'], [name='jenis'], [name='q']"
       hx-target="#timeline-container"
       class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
       Sebelumnya
     </button>
     {% endif %}
 
-    {% if page < total_pages %} <button hx-get="/kronologi?page={{ page + 1 }}"
+    {% if page < total_pages %} <button hx-get="{{ root_path }}/kronologi?page={{ page + 1 }}"
       hx-include="[name='dokumen_id'], [name='jenis'], [name='q']" hx-target="#timeline-container"
       class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-sm transition-colors">
       Berikutnya
@@ -179,7 +179,7 @@
   <p class="text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto mb-6">
     Tidak ditemukan data kronologi perencanaan yang sesuai dengan filter atau pencarian Anda.
   </p>
-  <button hx-get="/kronologi/form" hx-target="#modal-container" hx-swap="innerHTML"
+  <button hx-get="{{ root_path }}/kronologi/form" hx-target="#modal-container" hx-swap="innerHTML"
     class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-500/20 transition-all">
     <i data-lucide="plus" class="w-4 h-4"></i>
     <span>Catat Kejadian Baru</span>

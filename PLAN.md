@@ -742,3 +742,47 @@ _SIMETRI — Bappeda Kota Tegal_
   buat whatsapp webhook untuk menanyakan agenda
   contoh pesan : simetri-agenda hari ini, simetri-agenda tanggal 2026-10-29, simetri-agenda tanggal 29-10-2026
   Hanya menerima dari nomor yang terdaftar di Daftar Pengguna
+
+
+### 15. Modul Penyusunan Pagu (Inisialisasi)
+- [x] Buat Router `app/routers/pagu.py` dengan prefix `/pagu`.
+- [x] Buat Template `app/templates/pagu/index.html` (tampilan placeholder modul kosong dengan styling terstandar).
+- [x] Daftarkan router pagu pada `app/main.py`.
+- [x] Tambahkan navigasi menu "Penyusunan Pagu" pada sidebar dan mobile navigation di `app/templates/base.html`.
+- [x] Tambahkan unit test pada `tests/test_deployment.py`.
+
+
+### 16. Modul Penyusunan Pagu (Matriks Rekapitulasi & CRUD Rincian Anggaran)
+- [x] Tampilan Awal Daftar Perangkat Daerah dari tabel `ta_opd` (baris: 30 PD aktif).
+- [x] Kolom dinamis dari tabel `kategori_belanja` field `kategori` (40 kategori belanja terkelompok berdasarkan jenis).
+- [x] Matriks data nilai alokasi anggaran dari agregasi tabel `rincian_anggaran` (per PD x Kategori Belanja) dengan subtotal per PD, subtotal per Kategori, dan Grand Total.
+- [x] CRUD lengkap tabel `rincian_anggaran`:
+  - Create (Tambah Rincian Anggaran via modal HTMX)
+  - Read (Tabel data rincian dengan filter OPD, filter Kategori, pencarian keyword, pagination)
+  - Update (Edit Rincian Anggaran via modal HTMX)
+  - Delete (Hapus Rincian Anggaran dengan konfirmasi)
+- [x] Seeder Fake Data realistis:
+  - Script CLI `seed_pagu.py` (`python3 seed_pagu.py --total 60`)
+  - Tombol instan "Generate Fake Data" pada dashboard UI
+  - Service `generate_fake_rincian_anggaran()` di `app/services/pagu_service.py`
+- [x] Unit test komprehensif pada `tests/test_deployment.py` (18 unit tests passed).
+
+### 17. Refactor Modul Penyusunan Pagu
+- [x] Hapus Tab "Kelola Rincian Anggaran (CRUD)" pada halaman utama `/pagu` sehingga halaman berfokus penuh pada Matriks Rekapitulasi Pagu OPD.
+- [x] Pada Matriks Pagu OPD, klik Nama Perangkat Daerah mengarahkan ke halaman rincian belanja khusus Perangkat Daerah tersebut (`/pagu/opd/{id_pd}`).
+- [x] Halaman Rincian Belanja Perangkat Daerah (`app/templates/pagu/detail_opd.html`):
+  - Informasi header Perangkat Daerah (Kode, Nama, Kepala, NIP) dan kartu ringkasan pagu belanja.
+  - Filter Kategori Belanja dan pencarian keyword.
+  - Tabel Rincian Belanja lengkap dengan operasi CRUD (Tambah, Edit via modal HTMX, dan Hapus dengan konfirmasi).
+  - Subtotal pagu belanja OPD di baris footer tabel.
+- [x] Tambahkan flag `--reload` pada `run.sh` agar server otomatis reload saat berkas diubah.
+- [x] Pada Form Edit Rincian Anggaran (dan saat OPD telah terpilih), hapus combobox `<select>` Perangkat Daerah dan gantikan dengan field terproteksi (`type="hidden" name="id_pd"`) serta tampilan nama/kode OPD readonly.
+- [x] Unit test lolos pengujian (18 unit tests passed).
+
+### 18. Fitur Collapsible Sidebar Menu
+- [x] Tambahkan tombol toggle collapse/expand sidebar pada header ruang kerja (`app/templates/base.html`).
+- [x] Dukungan penyimpanan status collapse di `localStorage` (`simetri-sidebar-collapsed`) dan inisialisasi awal tanpa *layout flicker*.
+- [x] Dukungan animasi transisi CSS halus untuk ciut/rentang sidebar (`width`, `margin-left`, `padding`).
+- [x] Saat di-collapse, sidebar menampilkan ikon menu terpusat beserta atribut `title` sebagai tooltip.
+- [x] Tambahkan shortcut keyboard `Ctrl + B` (atau `Cmd + B`) untuk membuka/menutup sidebar.
+- [x] Responsif: tombol toggle disembunyikan otomatis pada layar seluler (yang menggunakan bottom navigation).

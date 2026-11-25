@@ -20,6 +20,24 @@ function toggleTheme() {
   localStorage.setItem('simetri-theme', isDark ? 'dark' : 'light');
 }
 
+// Sidebar Collapse Management
+function initSidebar() {
+  const isCollapsed = localStorage.getItem('simetri-sidebar-collapsed') === 'true';
+  if (isCollapsed) {
+    document.documentElement.classList.add('sidebar-collapsed');
+  } else {
+    document.documentElement.classList.remove('sidebar-collapsed');
+  }
+}
+
+function toggleSidebar() {
+  const isCollapsed = document.documentElement.classList.toggle('sidebar-collapsed');
+  localStorage.setItem('simetri-sidebar-collapsed', isCollapsed ? 'true' : 'false');
+  if (typeof lucide !== 'undefined') {
+    lucide.createIcons();
+  }
+}
+
 // Modal Management
 function openModal(htmlContent) {
   const container = document.getElementById('modal-container');
@@ -67,6 +85,18 @@ function showToast(message, type = 'info') {
 // Listen to htmx events
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
+  initSidebar();
+
+  // Keyboard shortcut Ctrl+B or Cmd+B to toggle sidebar
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+      const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+      if (activeTag !== 'input' && activeTag !== 'textarea' && activeTag !== 'select') {
+        e.preventDefault();
+        toggleSidebar();
+      }
+    }
+  });
 
   // Close modal when pressing Escape
   document.addEventListener('keydown', (e) => {
@@ -94,6 +124,17 @@ document.addEventListener('DOMContentLoaded', () => {
       const targetUrl = (e.detail && e.detail.url) ? e.detail.url : window.location.href;
       setTimeout(() => {
         window.location.href = targetUrl;
+      }, 400);
+    }
+  });
+
+  document.body.addEventListener('refreshPagu', (e) => {
+    closeModal();
+    const message = (e.detail && e.detail.message) ? e.detail.message : 'Data rincian anggaran berhasil diperbarui';
+    showToast(message, 'success');
+    if (window.location.pathname.includes('/pagu')) {
+      setTimeout(() => {
+        window.location.reload();
       }, 400);
     }
   });

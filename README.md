@@ -1,5 +1,7 @@
 # SIMETRI
 
+Panduan deployment ke **https://monevrkpd.tegalkota.go.id/simetri** beserta konfigurasi Nginx, Apache, dan systemd tersedia di [deploy/README.md](deploy/README.md). Gunakan `.env.example` sebagai acuan konfigurasi server.
+
 **Sistem Informasi Memori dan Riwayat Perencanaan Pembangunan Daerah**  
 Badan Perencanaan Pembangunan Daerah (Bappeda) Kota Tegal
 

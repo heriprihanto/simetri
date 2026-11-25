@@ -12,12 +12,13 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from sqlmodel import Session
 
 from app.database import get_db
-from app.middleware import get_current_user
+from app.middleware import require_login
 from app.models.user import User
 from app.models.kejadian import Kejadian, LampiranKejadian
 from app.models.surat import Surat, AttachmentSurat
 from app.models.agenda import Agenda, Foto
 from app.services.audit_service import log_activity
+from app.services.access_service import require_document_access
 from app.services.gdrive_service import (
     upload_file,
     delete_file,
@@ -42,7 +43,7 @@ async def upload_lampiran_kejadian(
     judul: str = Form(""),
     external_url: str = Form(""),
     file: Optional[UploadFile] = File(None),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_login),
     db: Session = Depends(get_db),
 ):
     """Upload file lampiran ke Google Drive atau simpan tautan eksternal untuk kejadian."""
@@ -50,6 +51,7 @@ async def upload_lampiran_kejadian(
     if not kejadian:
         raise HTTPException(status_code=404, detail="Kejadian tidak ditemukan")
 
+    require_document_access(db, current_user, kejadian.dokumen_id)
     if tipe == "link_eksternal":
         url_clean = (external_url or "").strip()
         if not url_clean:
@@ -144,7 +146,7 @@ async def upload_lampiran_kejadian(
 async def delete_lampiran_kejadian(
     lampiran_id: int,
     request: Request,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_login),
     db: Session = Depends(get_db),
 ):
     """Hapus lampiran kejadian."""
@@ -152,6 +154,10 @@ async def delete_lampiran_kejadian(
     if not lampiran:
         raise HTTPException(status_code=404, detail="Lampiran tidak ditemukan")
 
+    kejadian = db.get(Kejadian, lampiran.kejadian_id)
+    if not kejadian:
+        raise HTTPException(status_code=404, detail="Kejadian tidak ditemukan")
+    require_document_access(db, current_user, kejadian.dokumen_id)
     if lampiran.g_drive_file_id:
         delete_file(lampiran.g_drive_file_id)
 
@@ -180,7 +186,7 @@ async def upload_attachment_surat(
     surat_id: int,
     request: Request,
     file: UploadFile = File(...),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_login),
     db: Session = Depends(get_db),
 ):
     """Upload attachment arsip surat ke Google Drive."""
@@ -255,7 +261,7 @@ async def upload_attachment_surat(
 async def delete_attachment_surat(
     attachment_id: int,
     request: Request,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_login),
     db: Session = Depends(get_db),
 ):
     """Hapus attachment surat."""
@@ -291,7 +297,7 @@ async def upload_foto_agenda(
     agenda_id: int,
     request: Request,
     file: UploadFile = File(...),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_login),
     db: Session = Depends(get_db),
 ):
     """Upload foto dokumentasi kegiatan ke Google Drive."""
@@ -366,7 +372,7 @@ async def upload_foto_agenda(
 async def delete_foto_agenda(
     foto_id: int,
     request: Request,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_login),
     db: Session = Depends(get_db),
 ):
     """Hapus foto agenda."""

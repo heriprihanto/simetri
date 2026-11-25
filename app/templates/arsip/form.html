@@ -24,7 +24,7 @@
     <!-- Modal Form Body -->
     <form 
       id="form-surat"
-      hx-post="/arsip/save"
+      hx-post="{{ root_path }}/arsip/save"
       hx-encoding="multipart/form-data"
       enctype="multipart/form-data"
       hx-swap="none"
@@ -171,7 +171,7 @@
                 <span class="text-[10px] text-slate-400 font-normal">({{ a.size_display }})</span>
               </a>
               <button 
-                hx-delete="/lampiran/surat/{{ a.id }}" 
+                hx-delete="{{ root_path }}/lampiran/surat/{{ a.id }}"
                 hx-confirm="Hapus file lampiran ini dari Google Drive?" 
                 hx-target="closest div" 
                 hx-swap="outerHTML" 

@@ -1,6 +1,5 @@
 {% set page_title = page_title|default(title|default("SIMETRI - Bappeda Kota Tegal", true), true) %}
-{% set root_path = request.scope.get('root_path') or (request.headers.get('x-forwarded-prefix', '') if request.headers is defined else '') or root_path|default('') %}
-{% if not root_path and request.url is defined and request.url.path.startswith('/simetri') %}{% set root_path = '/simetri' %}{% endif %}
+{% set root_path = request.scope.get('root_path', root_path|default('')) %}
 <!DOCTYPE html>
 <html lang="id" class="h-full">
 <head>
@@ -46,9 +45,9 @@
 
   <!-- Custom CSS -->
   <link rel="stylesheet" href="{{ root_path }}/static/css/app.css?v=20261027-2">
-  <script>try { if (localStorage.getItem("simetri-theme") === "dark" || (!localStorage.getItem("simetri-theme") && matchMedia("(prefers-color-scheme: dark)").matches)) document.documentElement.classList.add("dark"); } catch (e) {}</script>
+  <script>try { if (localStorage.getItem("simetri-theme") === "dark" || (!localStorage.getItem("simetri-theme") && matchMedia("(prefers-color-scheme: dark)").matches)) document.documentElement.classList.add("dark"); if (localStorage.getItem("simetri-sidebar-collapsed") === "true") document.documentElement.classList.add("sidebar-collapsed"); } catch (e) {}</script>
   <script>
-    window.SIMETRI_ROOT_PATH = "{{ root_path }}";
+    window.SIMETRI_ROOT_PATH = {{ root_path|tojson }};
     // Auto-prefix semua request HTMX dengan root_path jika aplikasi berada di subpath reverse proxy
     document.addEventListener("htmx:configRequest", function(evt) {
       if (window.SIMETRI_ROOT_PATH && evt.detail.path.startsWith('/') && !evt.detail.path.startsWith(window.SIMETRI_ROOT_PATH)) {
@@ -67,8 +66,8 @@
     </a>
     <div class="sidebar-label">RUANG KERJA</div>
     <nav class="sidebar-nav">
-      {% for href, icon, label in [('/kronologi', 'git-branch', 'Kronologi Kejadian'), ('/arsip', 'archive', 'Arsip Surat'), ('/agenda', 'calendar-days', 'Agenda Kegiatan'), ('/dokumen', 'files', 'Dokumen Perencanaan'), ('/chatbot', 'bot', 'Chatbot AI')] %}
-      <a href="{{ root_path }}{{ href }}" {% if request.url.path.startswith(href) or request.url.path.startswith(root_path + href) %}aria-current="page"{% endif %}>
+      {% for href, icon, label in [('/kronologi', 'git-branch', 'Kronologi Kejadian'), ('/arsip', 'archive', 'Arsip Surat'), ('/agenda', 'calendar-days', 'Agenda Kegiatan'), ('/pagu', 'calculator', 'Penyusunan Pagu'), ('/dokumen', 'files', 'Dokumen Perencanaan'), ('/chatbot', 'bot', 'Chatbot AI')] %}
+      <a href="{{ root_path }}{{ href }}" title="{{ label }}" {% if request.url.path.startswith(href) or request.url.path.startswith(root_path + href) %}aria-current="page"{% endif %}>
         <i data-lucide="{{ icon }}"></i><span>{{ label }}</span>
         {% if request.url.path.startswith(href) or request.url.path.startswith(root_path + href) %}<i data-lucide="chevron-right" class="nav-arrow"></i>{% endif %}
       </a>
@@ -76,15 +75,21 @@
       {% if user and user.is_admin %}
       <div class="sidebar-label">ADMINISTRASI</div>
       {% for href, icon, label in [('/admin/users', 'users', 'Manajemen Pengguna'), ('/admin/audit', 'activity', 'Audit Trail')] %}
-      <a href="{{ root_path }}{{ href }}" {% if request.url.path.startswith(href) or request.url.path.startswith(root_path + href) %}aria-current="page"{% endif %}><i data-lucide="{{ icon }}"></i><span>{{ label }}</span></a>
+      <a href="{{ root_path }}{{ href }}" title="{{ label }}" {% if request.url.path.startswith(href) or request.url.path.startswith(root_path + href) %}aria-current="page"{% endif %}><i data-lucide="{{ icon }}"></i><span>{{ label }}</span></a>
       {% endfor %}
       {% endif %}
     </nav>
     <div class="sidebar-note"><i data-lucide="landmark"></i><strong>Memori untuk masa depan.</strong><p>Menjaga jejak perencanaan pembangunan Kota Tegal.</p></div>
-    <div class="sidebar-bottom"><span class="status-dot"></span> Sistem Informasi Perencanaan</div>
+    <div class="sidebar-bottom"><span class="status-dot"></span> <span class="sidebar-bottom-text">Sistem Informasi Perencanaan</span></div>
   </aside>
   <header class="workspace-header">
-    <div class="workspace-breadcrumb"><i data-lucide="layout-dashboard"></i><span>Ruang Kerja</span><span>/</span><strong>{{ page_title|default('SIMETRI', true) }}</strong></div>
+    <div class="workspace-breadcrumb">
+      <button onclick="toggleSidebar()" type="button" title="Ciutkan / Rentangkan Sidebar (Ctrl+B)" aria-label="Ciutkan atau rentangkan sidebar" class="theme-button sidebar-toggle-btn mr-1 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 transition-colors">
+        <i data-lucide="panel-left-close" class="sidebar-icon-close w-4 h-4"></i>
+        <i data-lucide="panel-left-open" class="sidebar-icon-open w-4 h-4"></i>
+      </button>
+      <i data-lucide="layout-dashboard"></i><span>Ruang Kerja</span><span>/</span><strong>{{ page_title|default('SIMETRI', true) }}</strong>
+    </div>
     <div class="workspace-account">
       <button onclick="toggleTheme()" type="button" title="Ganti tema" aria-label="Ganti tema terang atau gelap" class="theme-button"><i data-lucide="sun" class="hidden dark:block"></i><i data-lucide="moon" class="block dark:hidden"></i></button>
       {% if user %}
@@ -95,7 +100,7 @@
     </div>
   </header>
   <nav class="mobile-navigation" aria-label="Navigasi seluler">
-    {% for href, icon, label in [('/kronologi', 'git-branch', 'Kronologi'), ('/arsip', 'archive', 'Arsip'), ('/agenda', 'calendar-days', 'Agenda'), ('/dokumen', 'files', 'Dokumen'), ('/chatbot', 'bot', 'Chat')] %}
+    {% for href, icon, label in [('/kronologi', 'git-branch', 'Kronologi'), ('/arsip', 'archive', 'Arsip'), ('/agenda', 'calendar-days', 'Agenda'), ('/pagu', 'calculator', 'Pagu'), ('/dokumen', 'files', 'Dokumen'), ('/chatbot', 'bot', 'Chat')] %}
     <a href="{{ root_path }}{{ href }}" {% if request.url.path.startswith(href) or request.url.path.startswith(root_path + href) %}aria-current="page"{% endif %}><i data-lucide="{{ icon }}"></i><span>{{ label }}</span></a>
     {% endfor %}
     {% if user and user.is_admin %}<a href="{{ root_path }}/admin/users" {% if request.url.path.startswith('/admin') or request.url.path.startswith(root_path + '/admin') %}aria-current="page"{% endif %}><i data-lucide="shield"></i><span>Admin</span></a><a href="{{ root_path }}/admin/audit" {% if request.url.path.startswith('/admin/audit') or request.url.path.startswith(root_path + '/admin/audit') %}aria-current="page"{% endif %}><i data-lucide="activity"></i><span>Audit</span></a>{% endif %}

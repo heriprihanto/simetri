@@ -10,3 +10,4 @@ from app.models.surat import Surat, AttachmentSurat  # noqa: F401
 from app.models.agenda import Agenda, Foto  # noqa: F401
 from app.models.master import MasterJenisKejadian, MasterBidang  # noqa: F401
 from app.models.audit import AuditLog  # noqa: F401
+from app.models.pagu import KategoriBelanja, RincianAnggaran  # noqa: F401

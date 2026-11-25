@@ -7,7 +7,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Request, Depends, Query, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
-from sqlmodel import Session, select, func, col, desc
+from sqlmodel import Session, select, func, col, desc, false
 
 from app.database import get_session
 from app.middleware import get_current_user
@@ -16,6 +16,7 @@ from app.models.dokumen import DokumenPerencanaan
 from app.models.master import MasterJenisKejadian, MasterBidang
 from app.models.user import User, TaOpd
 from app.services.audit_service import log_activity
+from app.services.access_service import require_document_access
 from app.services.gdrive_service import (
     upload_file,
     delete_file,
@@ -36,10 +37,12 @@ def _filter_dokumen_for_user(session: Session, user: User):
 
     if user.is_user_opd:
         # User OPD hanya bisa lihat dokumen OPD mereka
-        stmt = stmt.where(DokumenPerencanaan.opd_id == user.opd_id)
+        stmt = stmt.where(DokumenPerencanaan.opd_id == user.opd_id) if user.opd_id is not None else stmt.where(false())
     elif user.is_user_bidang:
         # User Bidang hanya bisa lihat dokumen tingkat kota
         stmt = stmt.where(DokumenPerencanaan.opd_id == None)
+    elif not user.is_admin:
+        stmt = stmt.where(false())
 
     # Admin bisa lihat semua, urutkan dokumen default terlebih dahulu lalu nama
     return session.exec(
@@ -98,15 +101,11 @@ async def timeline(
         parsed_dokumen_id = int(dokumen_id.strip())
 
     # Build query kejadian
-    stmt = select(Kejadian)
+    dokumen_ids = [d.id for d in dokumen_list]
+    stmt = select(Kejadian).where(col(Kejadian.dokumen_id).in_(dokumen_ids))
 
     if parsed_dokumen_id:
         stmt = stmt.where(Kejadian.dokumen_id == parsed_dokumen_id)
-    else:
-        # Filter berdasarkan role
-        dokumen_ids = [d.id for d in dokumen_list]
-        if dokumen_ids:
-            stmt = stmt.where(col(Kejadian.dokumen_id).in_(dokumen_ids))
 
     if jenis:
         stmt = stmt.where(Kejadian.jenis_kejadian == jenis)
@@ -193,6 +192,7 @@ async def detail_kejadian(
     if not kejadian:
         return HTMLResponse("Tidak ditemukan", status_code=404)
 
+    require_document_access(session, user, kejadian.dokumen_id)
     kejadian.lampiran = session.exec(
         select(LampiranKejadian).where(LampiranKejadian.kejadian_id == kejadian_id)
     ).all()
@@ -229,6 +229,7 @@ async def form_kejadian(
     if kejadian_id:
         kejadian = session.get(Kejadian, kejadian_id)
         if kejadian:
+            require_document_access(session, user, kejadian.dokumen_id)
             kejadian.lampiran = session.exec(
                 select(LampiranKejadian).where(LampiranKejadian.kejadian_id == kejadian_id)
             ).all()
@@ -316,10 +317,12 @@ async def save_kejadian(
         kejadian = session.get(Kejadian, int(kejadian_id))
         if not kejadian:
             return HTMLResponse("Tidak ditemukan", status_code=404)
+        require_document_access(session, user, kejadian.dokumen_id)
     else:
         kejadian = Kejadian(created_by_id=user.id)
 
     kejadian.dokumen_id = int(form.get("dokumen_id", 0))
+    require_document_access(session, user, kejadian.dokumen_id)
 
     # Waktu & Tanggal kejadian (datetime input: %Y-%m-%dT%H:%M)
     now = datetime.now()
@@ -544,6 +547,7 @@ async def delete_kejadian(
     if not kejadian:
         return HTMLResponse("Tidak ditemukan", status_code=404)
 
+    require_document_access(session, user, kejadian.dokumen_id)
     # Hapus lampiran terkait
     lampiran_list = session.exec(
         select(LampiranKejadian).where(LampiranKejadian.kejadian_id == kejadian_id)

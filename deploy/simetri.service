@@ -1,0 +1,21 @@
+[Unit]
+Description=SIMETRI Bappeda Kota Tegal
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Sesuaikan user dan direktori instalasi pada server.
+User=simetri
+Group=simetri
+WorkingDirectory=/opt/simetri
+ExecStart=/opt/simetri/run.sh
+Restart=on-failure
+RestartSec=5
+TimeoutStartSec=120
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

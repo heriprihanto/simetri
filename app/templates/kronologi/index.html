@@ -27,7 +27,7 @@
       </a>
 
       <button 
-        hx-get="/kronologi/form{% if current_dokumen_id %}?dokumen_id={{ current_dokumen_id }}{% endif %}"
+        hx-get="{{ root_path }}/kronologi/form{% if current_dokumen_id %}?dokumen_id={{ current_dokumen_id }}{% endif %}"
         hx-target="#modal-container"
         hx-swap="innerHTML"
         class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-bold shadow-md shadow-indigo-500/25 inline-flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98]">
@@ -41,7 +41,7 @@
   <div class="glass-card rounded-2xl p-4 shadow-sm border border-slate-200/80 dark:border-slate-800/80 space-y-3">
     <form 
       id="filter-kronologi-form"
-      hx-get="/kronologi"
+      hx-get="{{ root_path }}/kronologi"
       hx-target="#timeline-container"
       hx-trigger="change, input delay:350ms from:input, refreshTimeline from:body"
       class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">

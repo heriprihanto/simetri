@@ -1,0 +1,147 @@
+<div id="rincian-table-container" class="space-y-4">
+  <div class="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-xs">
+    <table class="w-full text-left text-xs border-collapse">
+      <thead>
+        <tr class="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-[11px]">
+          <th class="px-4 py-3.5 w-12 text-center">No</th>
+          <th class="px-4 py-3.5 min-w-[220px]">Perangkat Daerah</th>
+          <th class="px-4 py-3.5 min-w-[180px]">Kategori Belanja</th>
+          <th class="px-4 py-3.5 min-w-[260px]">Uraian Kegiatan / Belanja</th>
+          <th class="px-4 py-3.5 text-right min-w-[150px]">Anggaran (Rp)</th>
+          <th class="px-4 py-3.5 min-w-[140px]">Tags / Label</th>
+          <th class="px-4 py-3.5 text-center w-24">Aksi</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+        {% if rincian_items %}
+          {% for r in rincian_items %}
+          <tr class="hover:bg-indigo-50/40 dark:hover:bg-slate-800/40 transition-colors group">
+            <td class="px-4 py-3 text-center text-slate-400 text-[11px]">
+              {{ ((current_page - 1) * 15) + loop.index }}
+            </td>
+            <td class="px-4 py-3">
+              {% if r.opd %}
+              <div class="font-semibold text-slate-900 dark:text-white">
+                {{ r.opd.nama_pd_singkat or r.opd.nama_pd }}
+              </div>
+              <div class="text-[10px] text-slate-400 font-mono mt-0.5">
+                {{ r.opd.kode }}
+              </div>
+              {% else %}
+              <span class="text-slate-400 italic">ID PD: {{ r.id_pd }}</span>
+              {% endif %}
+            </td>
+            <td class="px-4 py-3">
+              {% if r.kategori_rel %}
+              <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60 mb-1">
+                {{ r.kategori_rel.jenis or 'UMUM' }}
+              </span>
+              <div class="font-medium text-slate-800 dark:text-slate-200">
+                {{ r.kategori_rel.label_kategori }}
+              </div>
+              {% else %}
+              <span class="text-slate-400 italic">ID Kat: {{ r.id_kategori }}</span>
+              {% endif %}
+            </td>
+            <td class="px-4 py-3">
+              <div class="font-semibold text-slate-900 dark:text-white text-xs">
+                {{ r.uraian or '-' }}
+              </div>
+              {% if r.uraian_belanja %}
+              <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2">
+                {{ r.uraian_belanja }}
+              </div>
+              {% endif %}
+            </td>
+            <td class="px-4 py-3 text-right whitespace-nowrap">
+              <div class="font-bold text-slate-900 dark:text-white font-mono text-xs">
+                {{ format_rupiah(r.anggaran) }}
+              </div>
+            </td>
+            <td class="px-4 py-3">
+              {% if r.tags %}
+                <div class="flex flex-wrap gap-1">
+                  {% for t in r.tags.split() %}
+                  <span class="inline-block px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[10px] text-slate-600 dark:text-slate-300 font-medium">
+                    {{ t }}
+                  </span>
+                  {% endfor %}
+                </div>
+              {% else %}
+                <span class="text-slate-400 text-[11px]">-</span>
+              {% endif %}
+            </td>
+            <td class="px-4 py-3 text-center">
+              <div class="flex items-center justify-center gap-1.5">
+                <button 
+                  hx-get="{{ root_path }}/pagu/form/{{ r.id }}"
+                  hx-target="#modal-container"
+                  hx-swap="innerHTML"
+                  type="button"
+                  title="Edit Rincian"
+                  class="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                  <i data-lucide="edit-3" class="w-4 h-4"></i>
+                </button>
+                <button 
+                  hx-delete="{{ root_path }}/pagu/delete/{{ r.id }}"
+                  hx-confirm="Apakah Anda yakin ingin menghapus rincian anggaran ini?"
+                  hx-swap="none"
+                  type="button"
+                  title="Hapus Rincian"
+                  class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors">
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="7" class="px-6 py-12 text-center text-slate-400 dark:text-slate-500">
+              <div class="w-12 h-12 mx-auto mb-3 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
+                <i data-lucide="inbox" class="w-6 h-6"></i>
+              </div>
+              <p class="text-sm font-semibold text-slate-600 dark:text-slate-400 mb-1">Belum ada data rincian anggaran</p>
+              <p class="text-xs text-slate-400">Gunakan tombol "Tambah Rincian" atau "Generate Fake Data" untuk mengisi data.</p>
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  {% if total_pages > 1 %}
+  <div class="flex flex-col sm:flex-row items-center justify-between gap-3 px-2 py-2 text-xs text-slate-500 dark:text-slate-400">
+    <div>
+      Menampilkan halaman <span class="font-bold text-slate-700 dark:text-slate-200">{{ current_page }}</span> dari <span class="font-bold text-slate-700 dark:text-slate-200">{{ total_pages }}</span> (Total {{ total_rincian }} item)
+    </div>
+    <div class="flex items-center gap-1.5">
+      {% if current_page > 1 %}
+      <button 
+        hx-get="{{ root_path }}/pagu/rincian?page={{ current_page - 1 }}&id_pd={{ id_pd or '' }}&id_kategori={{ id_kategori or '' }}&q={{ q or '' }}"
+        hx-target="#rincian-table-container"
+        hx-swap="outerHTML"
+        class="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+        Sebelumnya
+      </button>
+      {% endif %}
+
+      <span class="px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-bold border border-indigo-200 dark:border-indigo-800/60">
+        {{ current_page }}
+      </span>
+
+      {% if current_page < total_pages %}
+      <button 
+        hx-get="{{ root_path }}/pagu/rincian?page={{ current_page + 1 }}&id_pd={{ id_pd or '' }}&id_kategori={{ id_kategori or '' }}&q={{ q or '' }}"
+        hx-target="#rincian-table-container"
+        hx-swap="outerHTML"
+        class="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-xs transition-colors">
+        Berikutnya
+      </button>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+

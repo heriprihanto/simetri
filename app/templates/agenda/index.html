@@ -19,7 +19,7 @@
 
     <!-- Tambah Agenda Action -->
     <button 
-      hx-get="/agenda/form"
+      hx-get="{{ root_path }}/agenda/form"
       hx-target="#modal-container"
       hx-swap="innerHTML"
       class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-bold shadow-md shadow-indigo-500/20 inline-flex items-center gap-2 transition-all self-start md:self-auto">
@@ -99,7 +99,7 @@
         <div class="space-y-1 mt-1 overflow-y-auto max-h-[70px]">
           {% for ev in day_events %}
           <button type="button"
-            hx-get="/agenda/form/{{ ev.id }}"
+            hx-get="{{ root_path }}/agenda/form/{{ ev.id }}"
             hx-target="#modal-container"
             hx-swap="innerHTML"
             class="calendar-event text-left w-full cursor-pointer text-[10px] px-1.5 py-0.5 rounded truncate font-medium border transition-colors
@@ -184,7 +184,7 @@
 
         <div class="flex items-center gap-2 self-end sm:self-center">
           <button 
-            hx-get="/agenda/form/{{ ag.id }}"
+            hx-get="{{ root_path }}/agenda/form/{{ ag.id }}"
             hx-target="#modal-container"
             hx-swap="innerHTML"
             class="p-2 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors" title="Edit Agenda">
@@ -192,7 +192,7 @@
           </button>
 
           <button 
-            hx-delete="/agenda/delete/{{ ag.id }}"
+            hx-delete="{{ root_path }}/agenda/delete/{{ ag.id }}"
             hx-confirm="Hapus agenda kegiatan ini?"
             hx-target="closest .agenda-item"
             hx-swap="outerHTML swap:0.2s"
@@ -204,7 +204,7 @@
       {% endfor %}
     </div>
     {% else %}
-    <div class="agenda-empty"><span class="empty-icon"><i data-lucide="calendar-plus"></i></span><h3>Belum ada agenda bulan ini</h3><p>Tambahkan kegiatan untuk mulai menyusun jadwal tim.</p><button type="button" hx-get="/agenda/form" hx-target="#modal-container" hx-swap="innerHTML" class="empty-action">Tambah agenda <i data-lucide="arrow-right"></i></button></div>
+    <div class="agenda-empty"><span class="empty-icon"><i data-lucide="calendar-plus"></i></span><h3>Belum ada agenda bulan ini</h3><p>Tambahkan kegiatan untuk mulai menyusun jadwal tim.</p><button type="button" hx-get="{{ root_path }}/agenda/form" hx-target="#modal-container" hx-swap="innerHTML" class="empty-action">Tambah agenda <i data-lucide="arrow-right"></i></button></div>
     {% endif %}
   </div>
 

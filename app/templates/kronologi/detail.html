@@ -162,7 +162,7 @@
               </a>
 
               <button 
-                hx-delete="/lampiran/kejadian/{{ l.id }}"
+                hx-delete="{{ root_path }}/lampiran/kejadian/{{ l.id }}"
                 hx-confirm="Hapus lampiran ini?"
                 hx-target="closest div.flex.items-center.justify-between"
                 hx-swap="outerHTML"
@@ -203,7 +203,7 @@
 
           <form 
             id="upload-lampiran-form"
-            action="/lampiran/kejadian/{{ kejadian.id }}/upload" 
+            action="{{ root_path }}/lampiran/kejadian/{{ kejadian.id }}/upload"
             method="post" 
             enctype="multipart/form-data"
             class="space-y-2.5">
@@ -267,7 +267,7 @@
 
       <div class="flex items-center gap-2">
         <button 
-          hx-get="/kronologi/form/{{ kejadian.id }}"
+          hx-get="{{ root_path }}/kronologi/form/{{ kejadian.id }}"
           hx-target="#modal-container"
           hx-swap="innerHTML"
           class="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5">

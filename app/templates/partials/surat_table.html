@@ -69,7 +69,7 @@
           <div class="inline-flex items-center gap-1.5">
             <button 
               type="button"
-              hx-get="/arsip/form/{{ s.id }}"
+              hx-get="{{ root_path }}/arsip/form/{{ s.id }}"
               hx-target="#modal-container"
               hx-swap="innerHTML"
               class="p-2 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer" 
@@ -79,7 +79,7 @@
 
             <button 
               type="button"
-              hx-delete="/arsip/delete/{{ s.id }}"
+              hx-delete="{{ root_path }}/arsip/delete/{{ s.id }}"
               hx-confirm="Hapus arsip surat ini beserta lampirannya?"
               hx-target="closest tr"
               hx-swap="outerHTML swap:0.2s"
@@ -111,7 +111,7 @@
   <div class="flex items-center gap-1">
     {% if page > 1 %}
     <button 
-      hx-get="/arsip?page={{ page - 1 }}"
+      hx-get="{{ root_path }}/arsip?page={{ page - 1 }}"
       hx-include="[name='jenis'], [name='q']"
       hx-target="#surat-table-container"
       class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800">
@@ -121,7 +121,7 @@
 
     {% if page < total_pages %}
     <button 
-      hx-get="/arsip?page={{ page + 1 }}"
+      hx-get="{{ root_path }}/arsip?page={{ page + 1 }}"
       hx-include="[name='jenis'], [name='q']"
       hx-target="#surat-table-container"
       class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold">

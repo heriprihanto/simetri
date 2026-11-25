@@ -50,7 +50,10 @@ def get_current_user(request: Request) -> Optional[User]:
     if not payload:
         return None
 
-    user_id = int(payload.get("sub", 0))
+    try:
+        user_id = int(payload.get("sub", 0))
+    except (ValueError, TypeError):
+        return None
     if not user_id:
         return None
 
@@ -75,14 +78,17 @@ def set_session_cookie(response, user: User) -> str:
         samesite="lax",
         max_age=JWT_EXPIRY_HOURS * 3600,
         secure=settings.COOKIE_SECURE,
-        path="/",
+        path=settings.ROOT_PATH or "/",
     )
     return token
 
 
 def clear_session_cookie(response):
     """Hapus session cookie."""
-    response.delete_cookie(key=COOKIE_NAME, path="/")
+    response.delete_cookie(key=COOKIE_NAME, path=settings.ROOT_PATH or "/", secure=settings.COOKIE_SECURE, httponly=True, samesite="lax")
+    if settings.ROOT_PATH:
+        # Clear the cookie used by earlier versions too.
+        response.delete_cookie(key=COOKIE_NAME, path="/", secure=settings.COOKIE_SECURE, httponly=True, samesite="lax")
 
 
 def require_login(request: Request) -> User:
@@ -90,9 +96,6 @@ def require_login(request: Request) -> User:
     user = get_current_user(request)
     if not user:
         login_url = settings.url_path("/login", request)
-        host = request.headers.get("host", "")
-        if ("monevrkpd.tegalkota.go.id" in host or request.url.path.startswith("/simetri")) and not login_url.startswith("/simetri"):
-            login_url = "/simetri" + login_url
         raise HTTPException(
             status_code=302,
             headers={

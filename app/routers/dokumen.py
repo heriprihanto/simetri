@@ -12,7 +12,7 @@ from sqlalchemy import func
 from sqlmodel import Session, desc, select
 
 from app.database import get_db
-from app.middleware import get_current_user, require_admin_or_bidang
+from app.middleware import require_login, require_admin_or_bidang
 from app.models.dokumen import JENIS_DOKUMEN, DokumenPerencanaan
 from app.models.kejadian import Kejadian, LampiranKejadian
 from app.models.user import TaOpd, User
@@ -33,7 +33,7 @@ async def list_dokumen(
     jenis: Optional[str] = None,
     tahun: Optional[int] = None,
     cakupan: Optional[str] = None,  # "kota" | "opd" | "all"
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_login),
     db: Session = Depends(get_db),
 ):
     """Halaman daftar dokumen perencanaan."""

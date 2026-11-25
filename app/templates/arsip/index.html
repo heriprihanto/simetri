@@ -18,7 +18,7 @@
 
     <!-- Tambah Surat Action -->
     <button 
-      hx-get="/arsip/form"
+      hx-get="{{ root_path }}/arsip/form"
       hx-target="#modal-container"
       hx-swap="innerHTML"
       class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-bold shadow-md shadow-indigo-500/20 inline-flex items-center gap-2 transition-all self-start md:self-auto">
@@ -64,7 +64,7 @@
   <div class="glass-card rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800/80">
     <form 
       id="filter-surat-form"
-      hx-get="/arsip"
+      hx-get="{{ root_path }}/arsip"
       hx-target="#surat-table-container"
       hx-trigger="change, input delay:350ms from:input, refreshSurat from:body"
       class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">

@@ -26,7 +26,7 @@
     </div>
 
     <!-- Modal Form Body -->
-    <form id="form-kejadian" hx-post="/kronologi/save" hx-encoding="multipart/form-data" enctype="multipart/form-data"
+    <form id="form-kejadian" hx-post="{{ root_path }}/kronologi/save" hx-encoding="multipart/form-data" enctype="multipart/form-data"
       hx-swap="none" class="p-6 overflow-y-auto space-y-4 flex-1">
 
       {% if kejadian %}
@@ -310,7 +310,7 @@
                 <span class="text-[10px] text-slate-400 shrink-0">({{ l.size_display }})</span>
                 {% endif %}
               </a>
-              <button type="button" hx-delete="/lampiran/kejadian/{{ l.id }}" hx-confirm="Hapus lampiran ini?"
+              <button type="button" hx-delete="{{ root_path }}/lampiran/kejadian/{{ l.id }}" hx-confirm="Hapus lampiran ini?"
                 hx-target="closest div.flex.items-center.justify-between" hx-swap="outerHTML"
                 class="p-1 text-slate-400 hover:text-rose-500 rounded-lg transition-colors ml-2" title="Hapus lampiran">
                 <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>

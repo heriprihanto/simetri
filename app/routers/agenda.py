@@ -47,6 +47,8 @@ async def halaman_agenda(
             tahun, bln = bulan.split("-")
             current_year = int(tahun)
             current_month = int(bln)
+            if not 1 <= current_month <= 12 or not 1 <= current_year <= 9998:
+                raise ValueError("Bulan atau tahun di luar rentang")
         except (ValueError, IndexError):
             current_year = today.year
             current_month = today.month
@@ -64,7 +66,8 @@ async def halaman_agenda(
 
     # Fetch agenda bulan ini
     stmt = select(Agenda).where(
-        func.to_char(Agenda.tanggal, "YYYY-MM") == ym
+        Agenda.tanggal >= date(current_year, current_month, 1),
+        Agenda.tanggal < date(next_year, next_month, 1),
     ).order_by(Agenda.tanggal, Agenda.jam_mulai, Agenda.id)
 
     agenda_list = session.exec(stmt).all()

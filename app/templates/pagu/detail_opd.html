@@ -1,0 +1,337 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Breadcrumb & Back Navigation -->
+  <div class="flex items-center justify-between gap-4">
+    <a 
+      href="{{ root_path }}/pagu"
+      class="inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition-colors py-1">
+      <i data-lucide="arrow-left" class="w-4 h-4"></i>
+      <span>Kembali ke Matriks Pagu OPD</span>
+    </a>
+
+    <!-- Action Tambah Rincian -->
+    <button 
+      hx-get="{{ root_path }}/pagu/form?id_pd={{ opd.id_sub_pd }}"
+      hx-target="#modal-container"
+      hx-swap="innerHTML"
+      class="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-bold shadow-md shadow-indigo-500/20 inline-flex items-center gap-2 transition-all">
+      <i data-lucide="plus" class="w-4 h-4"></i>
+      <span>Tambah Rincian Anggaran</span>
+    </button>
+  </div>
+
+  <!-- OPD Header Card -->
+  <div class="p-5 sm:p-6 rounded-3xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 shadow-xs">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div class="flex items-start gap-4">
+        <div class="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-100 dark:border-indigo-900/40">
+          <i data-lucide="building-2" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2 flex-wrap mb-1">
+            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+              {{ opd.kode }}
+            </span>
+            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+              Perangkat Daerah
+            </span>
+          </div>
+          <h1 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+            {{ opd.nama_pd }}
+          </h1>
+          {% if opd.nama_kepala %}
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-2">
+            <span><strong>Kepala:</strong> {{ opd.nama_kepala }}</span>
+            {% if opd.nip_kepala %}<span class="font-mono text-slate-400">({{ opd.nip_kepala }})</span>{% endif %}
+          </p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- OPD Stat Badges -->
+      <div class="flex items-center gap-3 shrink-0">
+        <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 text-right">
+          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Pagu Belanja</span>
+          <strong class="text-lg font-black text-indigo-600 dark:text-indigo-400 font-mono">
+            {{ format_rupiah(opd_summary.total_anggaran) }}
+          </strong>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Metric Summary -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div class="p-4 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+        <i data-lucide="wallet" class="w-5 h-5"></i>
+      </div>
+      <div>
+        <span class="text-[11px] font-bold text-slate-400 block">Total Pagu Belanja OPD</span>
+        <strong class="text-base font-black text-slate-900 dark:text-white font-mono">
+          {{ format_rupiah(opd_summary.total_anggaran) }}
+        </strong>
+      </div>
+    </div>
+
+    <div class="p-4 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+        <i data-lucide="file-spreadsheet" class="w-5 h-5"></i>
+      </div>
+      <div>
+        <span class="text-[11px] font-bold text-slate-400 block">Total Item Rincian Belanja</span>
+        <strong class="text-base font-black text-slate-900 dark:text-white">
+          {{ opd_summary.total_items }} <span class="text-xs font-semibold text-slate-400">Rincian</span>
+        </strong>
+      </div>
+    </div>
+
+    <div class="p-4 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+        <i data-lucide="layers" class="w-5 h-5"></i>
+      </div>
+      <div>
+        <span class="text-[11px] font-bold text-slate-400 block">Kategori Belanja Terisi</span>
+        <strong class="text-base font-black text-slate-900 dark:text-white">
+          {{ opd_summary.kategori_count }} <span class="text-xs font-semibold text-slate-400">Kategori</span>
+        </strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter & Search Toolbar -->
+  <div class="p-4 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 shadow-xs">
+    <form action="{{ root_path }}/pagu/opd/{{ opd.id_sub_pd }}" method="get" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <!-- Search Keyword -->
+      <div>
+        <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1">Cari Kegiatan / Belanja</label>
+        <div class="relative">
+          <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400"></i>
+          <input 
+            type="text" 
+            name="q" 
+            value="{{ q }}"
+            placeholder="Cari uraian, rekening, tag..."
+            class="w-full pl-8 pr-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
+        </div>
+      </div>
+
+      <!-- Filter Kategori Belanja -->
+      <div>
+        <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1">Kategori Belanja</label>
+        <select 
+          name="id_kategori" 
+          class="w-full px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
+          <option value="">-- Semua Kategori Belanja --</option>
+          {% for kat in all_kategoris %}
+          <option value="{{ kat.id }}" {% if id_kategori and id_kategori == kat.id %}selected{% endif %}>
+            [{{ kat.jenis or 'UMUM' }}] {{ kat.label_kategori }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-end gap-2">
+        <button 
+          type="submit" 
+          class="flex-1 px-4 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs transition-colors flex items-center justify-center gap-1.5">
+          <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+          <span>Terapkan Filter</span>
+        </button>
+        {% if q or id_kategori %}
+        <a 
+          href="{{ root_path }}/pagu/opd/{{ opd.id_sub_pd }}" 
+          class="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+          Reset
+        </a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+
+  <!-- Rincian Anggaran Table (CRUD) -->
+  <div class="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-xs">
+    <table class="w-full text-left text-xs border-collapse">
+      <thead>
+        <tr class="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-[11px]">
+          <th class="px-4 py-3.5 w-12 text-center">No</th>
+          <th class="px-4 py-3.5 min-w-[180px]">Kategori Belanja</th>
+          <th class="px-4 py-3.5 min-w-[260px]">Uraian Subkegiatan / Program</th>
+          <th class="px-4 py-3.5 min-w-[240px]">Rincian Belanja</th>
+          <th class="px-4 py-3.5 text-right min-w-[150px]">Pagu Anggaran (Rp)</th>
+          <th class="px-4 py-3.5 min-w-[140px]">Tags / Label</th>
+          <th class="px-4 py-3.5 text-center w-24">Aksi</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+        {% if rincian_items %}
+          {% for r in rincian_items %}
+          <tr class="hover:bg-indigo-50/40 dark:hover:bg-slate-800/40 transition-colors group">
+            <td class="px-4 py-3 text-center text-slate-400 text-[11px]">
+              {{ ((current_page - 1) * 20) + loop.index }}
+            </td>
+            <td class="px-4 py-3">
+              {% if r.kategori_rel %}
+              <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60 mb-1">
+                {{ r.kategori_rel.jenis or 'UMUM' }}
+              </span>
+              <div class="font-medium text-slate-800 dark:text-slate-200">
+                {{ r.kategori_rel.label_kategori }}
+              </div>
+              {% else %}
+              <span class="text-slate-400 italic">ID Kat: {{ r.id_kategori }}</span>
+              {% endif %}
+            </td>
+            <td class="px-4 py-3">
+              <div class="font-semibold text-slate-900 dark:text-white text-xs">
+                {{ r.uraian or '-' }}
+              </div>
+            </td>
+            <td class="px-4 py-3">
+              {% if r.uraian_belanja %}
+              <div class="text-[11px] text-slate-600 dark:text-slate-400">
+                {{ r.uraian_belanja }}
+              </div>
+              {% else %}
+              <span class="text-slate-400 text-[11px]">-</span>
+              {% endif %}
+            </td>
+            <td class="px-4 py-3 text-right whitespace-nowrap">
+              <div class="font-bold text-slate-900 dark:text-white font-mono text-xs">
+                {{ format_rupiah(r.anggaran) }}
+              </div>
+            </td>
+            <td class="px-4 py-3">
+              {% if r.tags %}
+                <div class="flex flex-wrap gap-1">
+                  {% for t in r.tags.split() %}
+                  <span class="inline-block px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[10px] text-slate-600 dark:text-slate-300 font-medium">
+                    {{ t }}
+                  </span>
+                  {% endfor %}
+                </div>
+              {% else %}
+                <span class="text-slate-400 text-[11px]">-</span>
+              {% endif %}
+            </td>
+            <td class="px-4 py-3 text-center">
+              <div class="flex items-center justify-center gap-1.5">
+                <!-- Edit Button -->
+                <button 
+                  hx-get="{{ root_path }}/pagu/form/{{ r.id }}"
+                  hx-target="#modal-container"
+                  hx-swap="innerHTML"
+                  type="button"
+                  title="Edit Rincian"
+                  class="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                  <i data-lucide="edit-3" class="w-4 h-4"></i>
+                </button>
+                <!-- Delete Button -->
+                <button 
+                  hx-delete="{{ root_path }}/pagu/delete/{{ r.id }}"
+                  hx-confirm="Apakah Anda yakin ingin menghapus rincian belanja ini?"
+                  hx-swap="none"
+                  type="button"
+                  title="Hapus Rincian"
+                  class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors">
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="7" class="px-6 py-12 text-center text-slate-400 dark:text-slate-500">
+              <div class="w-12 h-12 mx-auto mb-3 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
+                <i data-lucide="inbox" class="w-6 h-6"></i>
+              </div>
+              <p class="text-sm font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                Belum ada rincian belanja untuk {{ opd.nama_pd }}
+              </p>
+              <p class="text-xs text-slate-400 mb-4">
+                Klik tombol di bawah untuk mencatat rincian anggaran baru.
+              </p>
+              <button 
+                hx-get="{{ root_path }}/pagu/form?id_pd={{ opd.id_sub_pd }}"
+                hx-target="#modal-container"
+                hx-swap="innerHTML"
+                class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-500/20 inline-flex items-center gap-1.5 transition-all">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                <span>Tambah Rincian Anggaran</span>
+              </button>
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+
+      <!-- Footer Subtotal -->
+      {% if rincian_items %}
+      <tfoot class="bg-slate-50 dark:bg-slate-800/80 border-t-2 border-slate-200 dark:border-slate-700 font-bold text-slate-900 dark:text-white">
+        <tr>
+          <td colspan="4" class="px-4 py-3 text-right font-black uppercase text-xs">
+            Total Pagu Belanja (Halaman ini):
+          </td>
+          <td class="px-4 py-3 text-right font-mono font-black text-xs text-indigo-600 dark:text-indigo-400">
+            {{ format_rupiah(page_total) }}
+          </td>
+          <td colspan="2"></td>
+        </tr>
+      </tfoot>
+      {% endif %}
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  {% if total_pages > 1 %}
+  <div class="flex flex-col sm:flex-row items-center justify-between gap-3 px-2 py-2 text-xs text-slate-500 dark:text-slate-400">
+    <div>
+      Menampilkan halaman <span class="font-bold text-slate-700 dark:text-slate-200">{{ current_page }}</span> dari <span class="font-bold text-slate-700 dark:text-slate-200">{{ total_pages }}</span> (Total {{ total_rincian }} item)
+    </div>
+    <div class="flex items-center gap-1.5">
+      {% if current_page > 1 %}
+      <a 
+        href="{{ root_path }}/pagu/opd/{{ opd.id_sub_pd }}?page={{ current_page - 1 }}{% if id_kategori %}&id_kategori={{ id_kategori }}{% endif %}{% if q %}&q={{ q }}{% endif %}"
+        class="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+        Sebelumnya
+      </a>
+      {% endif %}
+
+      <span class="px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-bold border border-indigo-200 dark:border-indigo-800/60">
+        {{ current_page }}
+      </span>
+
+      {% if current_page < total_pages %}
+      <a 
+        href="{{ root_path }}/pagu/opd/{{ opd.id_sub_pd }}?page={{ current_page + 1 }}{% if id_kategori %}&id_kategori={{ id_kategori }}{% endif %}{% if q %}&q={{ q }}{% endif %}"
+        class="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-xs transition-colors">
+        Berikutnya
+      </a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+<!-- Auto-refresh on HTMX Trigger refreshPagu -->
+<script>
+  document.body.addEventListener('refreshPagu', function(evt) {
+    if (typeof closeModal === 'function') {
+      closeModal();
+    }
+    const msg = (evt.detail && evt.detail.message) ? evt.detail.message : 'Data rincian anggaran berhasil disimpan';
+    if (typeof showToast === 'function') {
+      showToast(msg, 'success');
+    }
+    setTimeout(() => {
+      window.location.reload();
+    }, 400);
+  });
+</script>
+{% endblock %}
+

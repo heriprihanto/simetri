@@ -1,0 +1,199 @@
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm modal-backdrop">
+  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden modal-content">
+    
+    <!-- Modal Header -->
+    <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+          <i data-lucide="calculator" class="w-4 h-4"></i>
+        </div>
+        <div>
+          <h2 class="text-base font-bold text-slate-900 dark:text-white">
+            {% if rincian %}Edit Rincian Anggaran{% else %}Tambah Rincian Anggaran{% endif %}
+          </h2>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400">
+            Pencatatan alokasi pagu belanja Perangkat Daerah
+          </p>
+        </div>
+      </div>
+      <button onclick="closeModal()" type="button" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <!-- Modal Form Body -->
+    <form 
+      id="form-rincian"
+      hx-post="{{ root_path }}/pagu/save"
+      hx-swap="none"
+      class="p-6 overflow-y-auto space-y-4 flex-1">
+      
+      {% if rincian %}
+      <input type="hidden" name="id" value="{{ rincian.id }}">
+      {% endif %}
+
+      <!-- Perangkat Daerah -->
+      {% if rincian or current_opd or (user.is_user_opd and user.opd_id) or selected_id_pd %}
+        {% set opd_id_val = user.opd_id if (user.is_user_opd and user.opd_id) else (current_opd.id_sub_pd if current_opd else (rincian.id_pd if rincian else selected_id_pd)) %}
+        {% set opd_nama_val = user.opd.nama_pd if (user.is_user_opd and user.opd) else (current_opd.nama_pd if current_opd else (rincian.opd.nama_pd if (rincian and rincian.opd) else 'Perangkat Daerah Terpilih')) %}
+        {% set opd_kode_val = user.opd.kode if (user.is_user_opd and user.opd) else (current_opd.kode if current_opd else (rincian.opd.kode if (rincian and rincian.opd) else '')) %}
+        <input type="hidden" name="id_pd" value="{{ opd_id_val }}">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+            Perangkat Daerah
+          </label>
+          <div class="px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 flex items-center justify-between">
+            <div class="flex items-center gap-2 min-w-0">
+              <i data-lucide="building-2" class="w-4 h-4 text-indigo-500 shrink-0"></i>
+              <span class="font-bold text-xs text-slate-900 dark:text-white truncate">
+                {{ opd_nama_val }}
+              </span>
+            </div>
+            {% if opd_kode_val %}
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded-md bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 shrink-0">
+              {{ opd_kode_val }}
+            </span>
+            {% endif %}
+          </div>
+        </div>
+      {% else %}
+        <div>
+          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+            Perangkat Daerah <span class="text-rose-500">*</span>
+          </label>
+          <select 
+            name="id_pd" 
+            required 
+            class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
+            <option value="">-- Pilih Perangkat Daerah --</option>
+            {% for opd in opds %}
+            <option value="{{ opd.id_sub_pd }}">
+              {{ opd.kode }} — {{ opd.nama_pd }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+      {% endif %}
+
+      <!-- Kategori Belanja -->
+      <div>
+        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+          Kategori Belanja <span class="text-rose-500">*</span>
+        </label>
+        <select 
+          name="id_kategori" 
+          required 
+          class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
+          <option value="">-- Pilih Kategori Belanja --</option>
+          {% for kat in kategoris %}
+          <option value="{{ kat.id }}" {% if (selected_id_kategori and selected_id_kategori == kat.id) or (rincian and rincian.id_kategori == kat.id) %}selected{% endif %}>
+            [{{ kat.jenis or 'UMUM' }}] {{ kat.label_kategori }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Uraian Program / Kegiatan / Subkegiatan -->
+      <div>
+        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+          Uraian Subkegiatan / Program <span class="text-rose-500">*</span>
+        </label>
+        <input 
+          type="text" 
+          name="uraian" 
+          required 
+          value="{{ rincian.uraian if rincian else '' }}"
+          placeholder="Contoh: Penyediaan Gaji dan Tunjangan ASN"
+          class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
+      </div>
+
+      <!-- Uraian Belanja / Rincian -->
+      <div>
+        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+          Uraian Belanja / Keterangan
+        </label>
+        <textarea 
+          name="uraian_belanja" 
+          rows="2"
+          placeholder="Contoh: Belanja Gaji Pokok PNS dan Tunjangan Keluarga 14 Bulan"
+          class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all resize-none">{{ rincian.uraian_belanja if rincian else '' }}</textarea>
+      </div>
+
+      <!-- Anggaran (Nominal Rupiah) -->
+      <div>
+        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+          Pagu Anggaran (Rp) <span class="text-rose-500">*</span>
+        </label>
+        <div class="relative">
+          <span class="absolute left-3 top-2.5 text-xs font-bold text-slate-400">Rp</span>
+          <input 
+            type="number" 
+            name="anggaran" 
+            id="input-anggaran"
+            required 
+            min="0"
+            step="1000"
+            value="{{ rincian.anggaran|int if rincian and rincian.anggaran else '' }}"
+            placeholder="0"
+            class="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white font-mono outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
+        </div>
+        <p id="anggaran-preview" class="text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold mt-1"></p>
+      </div>
+
+      <!-- Tags / Label -->
+      <div>
+        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+          Tags / Label (Pisahkan dengan spasi)
+        </label>
+        <input 
+          type="text" 
+          name="tags" 
+          value="{{ rincian.tags if rincian else '' }}"
+          placeholder="Contoh: #PaguIndikatif2027 #PrioritasDaerah #MandatorySpending"
+          class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
+      </div>
+
+      <!-- Actions -->
+      <div class="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2">
+        <button 
+          type="button" 
+          onclick="closeModal()" 
+          class="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+          Batal
+        </button>
+        <button 
+          type="submit" 
+          class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-500/20 transition-all flex items-center gap-1.5">
+          <i data-lucide="check" class="w-4 h-4"></i>
+          <span>Simpan Rincian</span>
+        </button>
+      </div>
+
+    </form>
+
+  </div>
+</div>
+
+<script>
+  // Dynamic currency helper
+  (function() {
+    const input = document.getElementById('input-anggaran');
+    const preview = document.getElementById('anggaran-preview');
+    function updatePreview() {
+      const val = parseFloat(input.value);
+      if (!isNaN(val) && val > 0) {
+        preview.textContent = 'Terbaca: Rp ' + Math.round(val).toLocaleString('id-ID');
+      } else {
+        preview.textContent = '';
+      }
+    }
+    if (input) {
+      input.addEventListener('input', updatePreview);
+      updatePreview();
+    }
+  })();
+  if (typeof lucide !== 'undefined') {
+    lucide.createIcons();
+  }
+</script>
+
