@@ -73,6 +73,9 @@ class DeploymentTests(unittest.TestCase):
                 for path in ('/', '/simetri/'):
                     r = await c.get(path)
                     self.assertEqual(r.headers['location'], '/simetri/kronologi')
+                r_sim = await c.get('/simetri')
+                self.assertIn(r_sim.status_code, (302, 307))
+                self.assertIn('/simetri', r_sim.headers['location'])
                 for path in ('/login', '/simetri/login'):
                     r = await c.get(path, headers={'x-forwarded-prefix': '/evil', 'referer': 'https://evil.test'})
                     self.assertEqual(r.status_code, 200)
@@ -266,6 +269,14 @@ class ConfigurationTests(unittest.TestCase):
         self.assertEqual(s.url_path('/simetri/agenda'), '/simetri/agenda')
         self.assertEqual(make_url(s.database_url).password, 'p@ss:/?#')
         self.assertEqual(make_url(s.database_url).query['sslmode'], s.DB_SSLMODE)
+
+    def test_whatsapp_basic_auth_config(self):
+        s = Settings(_env_file=None, SERVER_URL='https://example.test/simetri',
+                     ROOT_PATH='/simetri', SECRET_KEY='x' * 48, COOKIE_SECURE=True,
+                     GOOGLE_REDIRECT_URI='', WA_GATEWAY_USER='"bappeda"', WA_GATEWAY_PASSWORD='heriprihanto140286')
+        self.assertEqual(s.WA_GATEWAY_USER, 'bappeda')
+        self.assertEqual(s.WA_GATEWAY_PASSWORD, 'heriprihanto140286')
+        self.assertEqual(s.wa_auth, ('bappeda', 'heriprihanto140286'))
 
     def test_reject_invalid_production_configuration(self):
         for values in ({'SECRET_KEY': 'short'}, {'COOKIE_SECURE': False},

@@ -117,7 +117,7 @@ async def send_whatsapp_message(
     }
 
     try:
-        async with httpx.AsyncClient(timeout=httpx.Timeout(15.0, connect=5.0)) as client:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(15.0, connect=5.0), auth=settings.wa_auth) as client:
             resp = await client.post(api_url, json=post_data, headers=headers)
             http_code = resp.status_code
             resp_text = resp.text
@@ -155,6 +155,30 @@ async def receive_webhook(request: Request):
     """
     Menerima raw JSON payload dari WhatsApp Gateway, mencatat log, dan melakukan auto-reply.
     """
+    # 0. Validasi Basic Auth jika dikirimkan oleh Gateway
+    auth_header = request.headers.get("authorization", "")
+    if auth_header.startswith("Basic "):
+        import base64
+        import secrets
+        try:
+            cred_str = base64.b64decode(auth_header.split(" ", 1)[1].strip()).decode("utf-8")
+            u, p = cred_str.split(":", 1)
+            expected = settings.wa_auth
+            if expected:
+                exp_u, exp_p = expected
+                if not (secrets.compare_digest(u, exp_u) and secrets.compare_digest(p, exp_p)):
+                    logger.warning("[WhatsApp Webhook] Percobaan webhook dengan Basic Auth tidak valid.")
+                    return JSONResponse(
+                        content={"status": "error", "message": "Unauthorized"},
+                        status_code=401,
+                        headers={"WWW-Authenticate": 'Basic realm="SIMETRI WhatsApp Webhook"'},
+                    )
+        except Exception:
+            return JSONResponse(
+                content={"status": "error", "message": "Invalid Authorization header"},
+                status_code=401,
+            )
+
     # 1. Ambil raw payload
     raw_body = await request.body()
     if not raw_body or not raw_body.strip():

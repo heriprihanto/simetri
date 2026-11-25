@@ -6725,3 +6725,25 @@ Payload:
     "timestamp": "2026-10-28T01:13:27Z"
 }
 
+====================================================
+[2026-11-25 15:10:15] [IP: testclient] Event: ping
+Device ID : -
+From      : -
+Message   : -
+Payload:
+{
+    "event": "ping",
+    "payload": {}
+}
+
+====================================================
+[2026-11-25 15:10:15] [IP: testclient] Event: ping
+Device ID : -
+From      : -
+Message   : -
+Payload:
+{
+    "event": "ping",
+    "payload": {}
+}
+

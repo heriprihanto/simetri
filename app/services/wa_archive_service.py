@@ -565,7 +565,8 @@ async def extract_media_items_from_payload(
                 continue
             seen_identifiers.add(target)
             try:
-                async with httpx.AsyncClient(timeout=30.0) as client:
+                auth = settings.wa_auth if (server_base and server_base in target) else None
+                async with httpx.AsyncClient(timeout=30.0, auth=auth) as client:
                     resp = await client.get(target)
                     if resp.status_code == 200 and resp.content:
                         filename = custom_name or Path(target.split("?")[0]).name or f"wa_media_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
@@ -622,7 +623,7 @@ async def extract_media_items_from_payload(
                 if file_url not in seen_identifiers:
                     seen_identifiers.add(file_url)
                     try:
-                        async with httpx.AsyncClient(timeout=15.0) as client:
+                        async with httpx.AsyncClient(timeout=15.0, auth=settings.wa_auth) as client:
                             resp = await client.get(file_url)
                             if resp.status_code == 200 and resp.content:
                                 filename = custom_name or Path(target).name or f"wa_media_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
@@ -649,7 +650,7 @@ async def extract_media_items_from_payload(
 
             try:
                 logger.info(f"[WA Archive] Memanggil GoWA Download API: {download_api_url} (phone: {clean_phone})")
-                async with httpx.AsyncClient(timeout=30.0) as client:
+                async with httpx.AsyncClient(timeout=30.0, auth=settings.wa_auth) as client:
                     resp = await client.get(download_api_url, params=params, headers=headers)
                     if resp.status_code == 200:
                         res_json = resp.json()
@@ -735,7 +736,7 @@ async def extract_media_from_replied_message(
 
     try:
         logger.info(f"[WA Archive] Memanggil download API untuk replied message {replied_msg_id} (phone: {clean_phone})")
-        async with httpx.AsyncClient(timeout=30.0) as client:
+        async with httpx.AsyncClient(timeout=30.0, auth=settings.wa_auth) as client:
             resp = await client.get(download_api_url, params=params, headers=headers)
             if resp.status_code == 200:
                 res_json = resp.json()

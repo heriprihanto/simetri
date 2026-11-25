@@ -786,3 +786,7 @@ _SIMETRI — Bappeda Kota Tegal_
 - [x] Saat di-collapse, sidebar menampilkan ikon menu terpusat beserta atribut `title` sebagai tooltip.
 - [x] Tambahkan shortcut keyboard `Ctrl + B` (atau `Cmd + B`) untuk membuka/menutup sidebar.
 - [x] Responsif: tombol toggle disembunyikan otomatis pada layar seluler (yang menggunakan bottom navigation).
+
+
+Revisi Whatsapp,
+sekarang menggunakan BASIC Authentification, cek .env

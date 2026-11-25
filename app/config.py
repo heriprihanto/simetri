@@ -60,6 +60,8 @@ class Settings(BaseSettings):
     WA_DEVICE_ID: str = "Simetri"
     WA_STORAGE_PATH: str = "/home/herry/1_Project/go-whatsapp-web-multidevice/src"
     WA_MEDIA_DIR: str = ""
+    WA_GATEWAY_USER: str = ""
+    WA_GATEWAY_PASSWORD: str = ""
 
     @model_validator(mode="after")
     def set_default_wa_paths(self):
@@ -85,7 +87,20 @@ class Settings(BaseSettings):
             self.SECRET_KEY = secrets.token_urlsafe(48)
         if not self.WA_MEDIA_DIR and self.WA_STORAGE_PATH:
             self.WA_MEDIA_DIR = f"{self.WA_STORAGE_PATH.rstrip('/')}/statics/media"
+        if self.WA_GATEWAY_USER:
+            self.WA_GATEWAY_USER = self.WA_GATEWAY_USER.strip('"\' ')
+        if self.WA_GATEWAY_PASSWORD:
+            self.WA_GATEWAY_PASSWORD = self.WA_GATEWAY_PASSWORD.strip('"\' ')
         return self
+
+    @property
+    def wa_auth(self) -> Optional[tuple[str, str]]:
+        """Credential HTTP Basic Auth untuk WhatsApp Gateway jika diset."""
+        user = self.WA_GATEWAY_USER.strip('"\' ')
+        pwd = self.WA_GATEWAY_PASSWORD.strip('"\' ')
+        if user and pwd:
+            return (user, pwd)
+        return None
 
     @property
     def wa_server_url(self) -> str:

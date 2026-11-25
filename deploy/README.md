@@ -38,7 +38,7 @@ Pengujian memakai SQLite sementara dan OAuth/gateway tiruan. Koneksi PostgreSQL 
    ```
 
    Pastikan `GOOGLE_CLIENT_ID` dan `GOOGLE_CLIENT_SECRET` berasal dari client tersebut. Isi `INITIAL_ADMIN_EMAIL` dengan akun Google admin yang benar sebelum startup pertama.
-7. Isi `WA_API_URL`, `WA_DEVICE_ID`, dan path media sesuai lokasi gateway server. Default path komputer pengembang harus diganti. Jika gateway satu mesin, callback dapat memakai `http://127.0.0.1:8987/api/whatsapp`. Jika melalui domain publik, izinkan hanya IP gateway pada blok webhook di konfigurasi proxy. Webhook menerima identitas pengirim dari gateway sehingga harus dibatasi aksesnya.
+7. Isi `WA_API_URL`, `WA_DEVICE_ID`, `WA_GATEWAY_USER`, `WA_GATEWAY_PASSWORD`, dan path media sesuai lokasi gateway server. Jika WhatsApp Gateway mengaktifkan HTTP Basic Authentication, pastikan `WA_GATEWAY_USER` dan `WA_GATEWAY_PASSWORD` sesuai dengan kredensial gateway. Default path komputer pengembang harus diganti. Jika gateway satu mesin, callback dapat memakai `http://127.0.0.1:8987/api/whatsapp`. Jika melalui domain publik, izinkan hanya IP gateway pada blok webhook di konfigurasi proxy. Webhook menerima identitas pengirim dari gateway sehingga harus dibatasi aksesnya.
 8. Jika chatbot digunakan, isi `GEMINI_API_KEY` dan verifikasi ketersediaan `GEMINI_MODEL` pada akun Google AI yang digunakan.
 9. Batasi akses `.env` dan service account (`chmod 600`); user layanan harus dapat membacanya dan menulis direktori `uploads/` serta log webhook di root aplikasi. Web server harus mem-proxy ke Uvicorn, bukan melayani direktori proyek sebagai document root.
 
