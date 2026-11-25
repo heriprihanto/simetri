@@ -579,7 +579,7 @@ async def receive_webhook(request: Request):
                     # KASUS 5: Pesan teks biasa
                     else:
                         reply_text = (
-                            f"Halo {greeting_name}, Jangan chat saya yah, saya BOT silahkan chat admin:\n\n BOT SIMLABA"
+                            f"Halo {greeting_name}, Jangan chat saya yah, saya BOT silahkan chat admin:\n\n BOT MESSAGING"
                         )
                         await _send_and_log_reply("BOT-DEFAULT", reply_text)
 
